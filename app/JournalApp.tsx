@@ -175,9 +175,6 @@ export default function JournalApp() {
               <div className="mb-6">
                 <h2 className="text-3xl font-light text-gray-900">{format(selectedDate, 'EEEE')}</h2>
                 <p className="text-lg text-gray-500 mt-1">{format(selectedDate, 'MMMM d, yyyy')}</p>
-                <p className="text-sm text-gray-500 mt-2 font-mono">
-                  Format: <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded-sm">ORDER_ID: Status message</code>
-                </p>
               </div>
               <div className="relative">
                 <Textarea
