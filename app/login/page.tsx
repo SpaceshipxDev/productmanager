@@ -13,39 +13,56 @@ export default function LoginInterface() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState<'username' | 'password'>('username')
+  const [showSignup, setShowSignup] = useState(false)
 
   const handleContinue = async () => {
     if (step === 'username' && username) {
-      setStep("password")
-    } else if (step === "password" && password) {
+      setError('')
+      setStep('password')
+    } else if (step === 'password' && password) {
       try {
-        setIsLoading(true);
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        setIsLoading(true)
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
-        });
+        })
         if (res.ok) {
-          location.href = "/";
-        } else if (res.status === 404) {
-          const reg = await fetch("/api/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-          });
-          if (reg.ok) {
-            location.href = "/";
-          } else {
-            const data = await reg.json();
-            setError(data.error || "Unable to register");
-          }
-        } else {
-          const data = await res.json();
-          setError(data.error || "Invalid credentials");
+          location.href = '/'
+          return
         }
+
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 404) {
+          setError('User not found')
+        } else {
+          setError(data.error || 'Invalid credentials')
+        }
+        setShowSignup(true)
+        setStep('username')
+        setPassword('')
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
+    }
+  }
+
+  const handleSignup = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      if (res.ok) {
+        location.href = '/'
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Unable to register')
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -186,7 +203,20 @@ export default function LoginInterface() {
                 </span>
               )}
             </Button>
-            {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+            {error && (
+              <div className="mt-2 space-y-2">
+                <p className="text-sm text-red-500">{error}</p>
+                {showSignup && (
+                  <Button
+                    variant="outline"
+                    onClick={handleSignup}
+                    className="w-full"
+                  >
+                    Create account
+                  </Button>
+                )}
+              </div>
+            )}
           </motion.div>
         </div>
 
@@ -199,7 +229,13 @@ export default function LoginInterface() {
         >
           <p className="text-sm text-gray-500">
             New to Production Log?{' '}
-            <button className="text-gray-900 font-medium hover:underline">
+            <button
+              onClick={() => {
+                setShowSignup(true)
+                setStep('username')
+              }}
+              className="text-gray-900 font-medium hover:underline"
+            >
               Create an account
             </button>
           </p>
