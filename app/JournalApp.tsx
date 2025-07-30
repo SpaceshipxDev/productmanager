@@ -42,6 +42,34 @@ export default function JournalApp() {
   const dateKey = format(selectedDate, 'yyyy-MM-dd')
 
   useEffect(() => {
+    async function loadNote() {
+      try {
+        const res = await fetch(`/api/notes?date=${dateKey}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.note) {
+            setEntries(prev => ({
+              ...prev,
+              [dateKey]: {
+                date: selectedDate,
+                content: data.note.content as string,
+                lastModified: new Date(data.note.lastModified)
+              }
+            }))
+          } else {
+            setEntries(prev => {
+              const next = { ...prev }
+              delete next[dateKey]
+              return next
+            })
+          }
+        }
+      } catch {}
+    }
+    loadNote()
+  }, [dateKey, selectedDate])
+
+  useEffect(() => {
     const entry = entries[dateKey]
     setCurrentContent(entry?.content || '')
   }, [selectedDate, entries, dateKey])
@@ -61,6 +89,11 @@ export default function JournalApp() {
             lastModified: new Date()
           }
         }))
+        fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateKey, content: currentContent })
+        }).catch(() => {})
         setIsSaving(false)
         setShowSaved(true)
         setTimeout(() => setShowSaved(false), 2000)
