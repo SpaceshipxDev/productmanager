@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react'
 import { format, addDays, subDays, isToday, isSameDay } from 'date-fns'
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -118,6 +118,14 @@ export default function JournalApp() {
     setSelectedDate(new Date())
   }
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' })
+    } finally {
+      location.href = '/login'
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
@@ -148,11 +156,14 @@ export default function JournalApp() {
                 </Button>
               )}
             </div>
-            <div className="w-20 flex justify-end">
+            <div className="flex items-center gap-2 justify-end w-24">
               <AnimatePresence mode="wait">
                 {isSaving && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-gray-400">Saving...</motion.span>}
                 {showSaved && !isSaving && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-green-600">Saved</motion.span>}
               </AnimatePresence>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 rounded-full hover:bg-gray-100">
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
