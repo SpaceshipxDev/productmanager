@@ -75,31 +75,38 @@ export default function JournalApp() {
   }, [selectedDate, entries, dateKey])
 
   useEffect(() => {
-    if (currentContent !== (entries[dateKey]?.content || '')) {
-      setIsSaving(true)
+    if (currentContent === (entries[dateKey]?.content || '')) return
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    setIsSaving(true)
+    saveTimeoutRef.current = setTimeout(() => {
+      setEntries(prev => ({
+        ...prev,
+        [dateKey]: {
+          date: selectedDate,
+          content: currentContent,
+          lastModified: new Date()
+        }
+      }))
+      fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: dateKey, content: currentContent })
+      }).catch(() => {})
+      setIsSaving(false)
+      setShowSaved(true)
+      setTimeout(() => setShowSaved(false), 2000)
+    }, 500)
+
+    return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
-      saveTimeoutRef.current = setTimeout(() => {
-        setEntries(prev => ({
-          ...prev,
-          [dateKey]: {
-            date: selectedDate,
-            content: currentContent,
-            lastModified: new Date()
-          }
-        }))
-        fetch('/api/notes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: dateKey, content: currentContent })
-        }).catch(() => {})
-        setIsSaving(false)
-        setShowSaved(true)
-        setTimeout(() => setShowSaved(false), 2000)
-      }, 500)
     }
-  }, [currentContent, dateKey, selectedDate, entries])
+  }, [currentContent, dateKey, selectedDate])
 
   const navigateDate = (direction: 'prev' | 'next') => {
     setSelectedDate(current => 
