@@ -8,8 +8,9 @@ This project is a Next.js application that allows employees to log order status 
 - **SQLite** is used as the persistence layer (`database.sqlite`).
 - Tables:
   - `users` – stores user credentials (`id`, `username`, `password`).
-  - `notes` – stores order notes (`user_id`, `date`, `content`, `last_modified`).
-- Database helpers in `lib/db.ts` provide CRUD operations. A new `getAllNotes` function aggregates every note with its author.
+  - `notes` – legacy table storing full documents for a day.
+  - `note_lines` – stores each line of a note separately (`user_id`, `date`, `line_index`, `content`, `last_modified`).
+- Database helpers in `lib/db.ts` provide CRUD operations. `getAllNotes` aggregates notes across users for the AI assistant.
 
 ### Authentication
 - Sessions are signed tokens stored in a cookie. Creation and verification logic lives in `lib/auth.ts`.
