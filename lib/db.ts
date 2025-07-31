@@ -56,18 +56,30 @@ export function upsertNote(userId: number, date: string, content: string) {
     .map(l => l.trim())
     .filter(l => l !== '')
 
-  let idx = 0
-  for (const line of lines) {
-    run(
-      `INSERT INTO lines (user_id, date, idx, content, last_modified) VALUES (${userId}, '${escape(
-        date
-      )}', ${idx}, '${escape(line)}', strftime('%s','now')) ON CONFLICT(user_id, date, idx) DO UPDATE SET content='${escape(
-        line
-      )}', last_modified=strftime('%s','now');`
-    )
-    idx++
+  const existing = query(
+    `SELECT idx, content FROM lines WHERE user_id = ${userId} AND date = '${escape(date)}' ORDER BY idx;`
+  ) as { idx: number; content: string }[]
+  const map = new Map<number, string>()
+  for (const row of existing) map.set(row.idx, row.content)
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx]
+    const current = map.get(idx)
+    if (current === undefined) {
+      run(
+        `INSERT INTO lines (user_id, date, idx, content, last_modified) VALUES (${userId}, '${escape(
+          date
+        )}', ${idx}, '${escape(line)}', strftime('%s','now'));`
+      )
+    } else if (current !== line) {
+      run(
+        `UPDATE lines SET content='${escape(line)}', last_modified=strftime('%s','now') WHERE user_id = ${userId} AND date = '${escape(
+          date
+        )}' AND idx = ${idx};`
+      )
+    }
   }
-  run(`DELETE FROM lines WHERE user_id = ${userId} AND date = '${escape(date)}' AND idx >= ${idx};`)
+  run(`DELETE FROM lines WHERE user_id = ${userId} AND date = '${escape(date)}' AND idx >= ${lines.length};`)
 }
 
 export function getAllNotes() {
