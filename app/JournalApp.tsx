@@ -22,7 +22,6 @@ interface JournalEntry {
 // --- CHANGED: The placeholder text is now highly specific to the CNC client's use case ---
 const logPlaceholderText = `记录今日工单状态，一行一个...
 
-例如:
 YNMX-2025-06-07: 质检失败 (主轴跳动超公差)
 YNMX-2025-07-21: 加工中 
 YNMX-2025-04-20: 等待物料
