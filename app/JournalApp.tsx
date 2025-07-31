@@ -177,17 +177,31 @@ export default function ManagementApp() {
     setInput("")
     setIsLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: userMessage.content })
+      })
+      const data = await res.json()
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `Based on the Q3 data, here are the key insights:\n\nRevenue Performance\nTotal revenue increased by 23% YoY to $4.2M, driven primarily by Enterprise segment growth (+45%). The SMB segment showed modest growth at 12%.\n\nTeam Efficiency\nEngineering velocity improved by 18% after implementing the new sprint structure. Customer success team reduced average resolution time from 48h to 24h. Sales cycle shortened by 5 days on average.\n\nRisk Factors\nCustomer churn in the SMB segment increased to 8.2% (target: <5%). Technical debt accumulation in the core platform requires attention. Hiring pipeline for senior roles remains challenging.\n\nWould you like me to dive deeper into any of these areas or analyze specific metrics?`,
+        role: 'assistant',
+        content: data.text || data.error || 'Error communicating with AI',
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, aiMessage])
+    } catch {
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Failed to contact AI service.',
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, aiMessage])
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

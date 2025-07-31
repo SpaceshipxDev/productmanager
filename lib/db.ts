@@ -49,3 +49,11 @@ export function upsertNote(userId: number, date: string, content: string) {
   initDB()
   run(`INSERT INTO notes (user_id, date, content, last_modified) VALUES (${userId}, '${escape(date)}', '${escape(content)}', strftime('%s','now')) ON CONFLICT(user_id, date) DO UPDATE SET content='${escape(content)}', last_modified=strftime('%s','now');`)
 }
+
+export function getAllNotes() {
+  initDB()
+  const rows = query(
+    `SELECT users.username as username, notes.date as date, notes.content as content FROM notes JOIN users ON notes.user_id = users.id ORDER BY notes.date DESC;`
+  )
+  return rows as { username: string; date: string; content: string }[]
+}
