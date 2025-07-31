@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format, addDays, subDays, isToday, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, LogOut, BarChart3, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,26 @@ export default function JournalApp() {
 
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
+  const flushSave = useCallback(() => {
+    setEntries(prev => ({
+      ...prev,
+      [dateKey]: {
+        date: selectedDate,
+        content: currentContent,
+        lastModified: new Date(),
+      },
+    }));
+    fetch('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dateKey, content: currentContent }),
+    }).catch(() => {});
+    setIsSaving(false);
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 2000);
+  }, [currentContent, dateKey, selectedDate]);
+
+
   useEffect(() => {
     async function loadNote() {
       try {
@@ -78,34 +98,19 @@ export default function JournalApp() {
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
+      flushSave();
     }
 
     setIsSaving(true);
-    saveTimeoutRef.current = setTimeout(() => {
-      setEntries(prev => ({
-        ...prev,
-        [dateKey]: {
-          date: selectedDate,
-          content: currentContent,
-          lastModified: new Date(),
-        },
-      }));
-      fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: dateKey, content: currentContent }),
-      }).catch(() => {});
-      setIsSaving(false);
-      setShowSaved(true);
-      setTimeout(() => setShowSaved(false), 2000);
-    }, 500);
+    saveTimeoutRef.current = setTimeout(flushSave, 500);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        flushSave();
       }
     };
-  }, [currentContent, dateKey, selectedDate]);
+  }, [currentContent, dateKey, selectedDate, flushSave]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
     setSelectedDate(current =>
@@ -220,7 +225,7 @@ export default function JournalApp() {
                       variant="ghost"
                       className={cn(
                         'h-9 px-4 rounded-lg hover:bg-gray-100/80 font-medium text-[13px]',
-                        isToday(selectedDate) ? 'text-blue-600' : 'text-gray-700'
+                        isToday(selectedDate) ? 'text-gray-900' : 'text-gray-700'
                       )}
                     >
                       {isToday(selectedDate) ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
