@@ -73,19 +73,33 @@ export function upsertNote(userId: number, date: string, content: string) {
 export function getAllNotes() {
   initDB()
   const rows = query(
-    `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content FROM lines JOIN users ON lines.user_id = users.id ORDER BY lines.date DESC, lines.idx;`
-  ) as { username: string; date: string; idx: number; content: string }[]
-  const map = new Map<string, { username: string; date: string; lines: string[] }>()
+    `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content, lines.last_modified as last_modified FROM lines JOIN users ON lines.user_id = users.id ORDER BY lines.date DESC, lines.idx;`
+  ) as { username: string; date: string; idx: number; content: string; last_modified: number }[]
+
+  const map = new Map<
+    string,
+    { username: string; date: string; lines: string[]; lastModified: number[] }
+  >()
+
   for (const row of rows) {
     const key = `${row.username}|${row.date}`
     if (!map.has(key)) {
-      map.set(key, { username: row.username, date: row.date, lines: [] })
+      map.set(key, {
+        username: row.username,
+        date: row.date,
+        lines: [],
+        lastModified: [],
+      })
     }
-    map.get(key)!.lines[row.idx] = row.content
+    const entry = map.get(key)!
+    entry.lines[row.idx] = row.content
+    entry.lastModified[row.idx] = row.last_modified
   }
+
   return Array.from(map.values()).map(v => ({
     username: v.username,
     date: v.date,
-    content: v.lines.join('\n')
+    content: v.lines.join('\n'),
+    lastModified: Math.max(...v.lastModified) * 1000,
   }))
 }

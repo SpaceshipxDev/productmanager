@@ -9,7 +9,7 @@ This project is a Next.js application that allows employees to log order status 
 - Tables:
   - `users` – stores user credentials (`id`, `username`, `password`).
   - `lines` – each row of a daily log (`user_id`, `date`, `idx`, `content`, `last_modified`).
-  - Database helpers in `lib/db.ts` provide CRUD operations. A new `getAllNotes` function aggregates all lines per user and date.
+  - Database helpers in `lib/db.ts` provide CRUD operations. A new `getAllNotes` function aggregates all lines per user and date and reports each note's last modified timestamp.
 
 ### Authentication
 - Sessions are signed tokens stored in a cookie. Creation and verification logic lives in `lib/auth.ts`.
@@ -24,8 +24,8 @@ This project is a Next.js application that allows employees to log order status 
 1. `app/api/chat/route.ts` initializes `GoogleGenAI` with an API key from `GOOGLE_API_KEY`.
 2. When a POST request with `{ question }` arrives:
    - Session is verified.
-   - All lines are loaded with `getAllNotes()`.
-   - Lines are concatenated and sent to the `gemini-2.5-flash` model along with the user's question.
+  - All lines are loaded with `getAllNotes()`, which also provides the last modified timestamp for each note.
+  - Lines along with their last modified time are concatenated and sent to the `gemini-2.5-flash` model together with the user's question.
    - The API returns the model's text reply.
 
 ### Client Application

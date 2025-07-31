@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   initDB()
   const notes = getAllNotes()
   const noteText = notes
-    .map(n => `${n.username} - ${n.date}:\n${n.content}`)
+    .map(n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`)
     .join('\n\n')
 
   try {
