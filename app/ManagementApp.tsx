@@ -14,7 +14,7 @@ interface Message {
   content: string;
   timestamp: Date;
 }
-
+ 
 export default function ManagementApp() {
   const [messages, setMessages] = useState<Message[]>([
     {
