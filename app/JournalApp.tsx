@@ -103,7 +103,9 @@ export default function JournalApp() {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
       }
+      setIsSaving(false);
     };
   }, [currentContent, dateKey, selectedDate]);
 
@@ -220,7 +222,7 @@ export default function JournalApp() {
                       variant="ghost"
                       className={cn(
                         'h-9 px-4 rounded-lg hover:bg-gray-100/80 font-medium text-[13px]',
-                        isToday(selectedDate) ? 'text-blue-600' : 'text-gray-700'
+                        isToday(selectedDate) ? 'text-black' : 'text-gray-700'
                       )}
                     >
                       {isToday(selectedDate) ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
