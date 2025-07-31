@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { format, addDays, subDays, isToday, isSameDay } from 'date-fns'
-import { ChevronLeft, ChevronRight, Calendar, LogOut, ArrowUp, BarChart3, FileText } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LogOut, ArrowUp, BarChart3, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -205,7 +205,8 @@ export default function ManagementApp() {
           <div className="flex items-center justify-between h-16">
             {/* Left: Logo/Title */}
             <div className="flex items-center">
-              <h1 className="text-[15px] font-semibold text-gray-900 tracking-tight">
+              {/* --- CHANGE 1: Updated Title Style --- */}
+              <h1 className="text-[15px] font-medium text-gray-600 tracking-tight">
                 Production Control
               </h1>
             </div>
@@ -250,88 +251,8 @@ export default function ManagementApp() {
 
             {/* Right: Actions */}
             <div className="flex items-center">
-              <AnimatePresence mode="wait">
-                {currentView === 'journal' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-2 mr-3"
-                  >
-                    {/* Date Navigation */}
-                    <div className="flex items-center bg-gray-50 rounded-lg">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigateDate('prev')}
-                        className="h-8 w-8 rounded-lg hover:bg-gray-100/80"
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                      </Button>
-                      
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className={cn(
-                              "h-8 px-3 rounded-lg hover:bg-gray-100/80 font-medium text-[13px] min-w-[120px]",
-                              isToday(selectedDate) && "text-blue-600"
-                            )}
-                          >
-                            {isToday(selectedDate) ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                          <CalendarComponent
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={(date) => date && setSelectedDate(date)}
-                            disabled={(date) => date > new Date()}
-                            className="rounded-md"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigateDate('next')}
-                        disabled={isSameDay(selectedDate, new Date())}
-                        className="h-8 w-8 rounded-lg hover:bg-gray-100/80 disabled:opacity-30"
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-
-                    {/* Save Status */}
-                    <div className="flex items-center h-8 px-3 min-w-[70px]">
-                      <AnimatePresence mode="wait">
-                        {isSaving && (
-                          <motion.span
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 4 }}
-                            className="text-[11px] font-medium text-gray-400"
-                          >
-                            Saving...
-                          </motion.span>
-                        )}
-                        {showSaved && !isSaving && (
-                          <motion.span
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 4 }}
-                            className="text-[11px] font-medium text-green-600"
-                          >
-                            Saved
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* --- CHANGE 2: Date Navigation has been REMOVED from the header --- */}
+              {/* The save status has also been moved into the main content area for context */}
 
               {/* Logout */}
               <Button
@@ -361,9 +282,84 @@ export default function ManagementApp() {
             <div className="max-w-4xl mx-auto px-6">
               <div className="mt-8">
                 <div className="mb-8">
-                  <h2 className="text-3xl font-extralight text-gray-900 tracking-tight">{format(selectedDate, 'EEEE')}</h2>
-                  <p className="text-lg text-gray-500 mt-1 font-light">{format(selectedDate, 'MMMM d, yyyy')}</p>
+                  {/* --- BONUS: Slightly refined date title styling for better hierarchy --- */}
+                  <h2 className="text-3xl font-light text-gray-900 tracking-tight">{format(selectedDate, 'EEEE')}</h2>
+                  <p className="text-lg text-gray-500 mt-1 font-normal">{format(selectedDate, 'MMMM d, yyyy')}</p>
                 </div>
+                
+                {/* --- CHANGE 3: Date Navigation is now HERE, inside the journal view --- */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigateDate('prev')}
+                      className="h-9 w-9 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100/80"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "h-9 px-4 rounded-lg hover:bg-gray-100/80 font-medium text-[13px]",
+                            isToday(selectedDate) ? "text-blue-600" : "text-gray-700"
+                          )}
+                        >
+                          {isToday(selectedDate) ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => date && setSelectedDate(date)}
+                          disabled={(date) => date > new Date()}
+                          className="rounded-md"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigateDate('next')}
+                      disabled={isSameDay(selectedDate, new Date())}
+                      className="h-9 w-9 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100/80 disabled:opacity-30"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Save Status */}
+                  <div className="flex items-center h-8 px-3 min-w-[70px]">
+                    <AnimatePresence mode="wait">
+                      {isSaving && (
+                        <motion.span
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          className="text-[11px] font-medium text-gray-400"
+                        >
+                          Saving...
+                        </motion.span>
+                      )}
+                      {showSaved && !isSaving && (
+                        <motion.span
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          className="text-[11px] font-medium text-green-600"
+                        >
+                          Saved
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
                 <div className="relative">
                   <Textarea
                     ref={textareaRef}
