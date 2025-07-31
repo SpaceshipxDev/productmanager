@@ -5,7 +5,7 @@ const dbPath = join(process.cwd(), 'database.sqlite')
 export function initDB() {
   const commands = [
     "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT);",
-    "CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, content TEXT, last_modified INTEGER, UNIQUE(user_id, date));",
+    "CREATE TABLE IF NOT EXISTS lines (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, idx INTEGER, content TEXT, last_modified INTEGER, UNIQUE(user_id, date, idx));",
   ]
   for (const cmd of commands) {
     execFileSync('sqlite3', [dbPath, cmd])
@@ -38,22 +38,54 @@ export function createUser(username: string, password: string) {
 
 export function getNote(userId: number, date: string) {
   initDB()
-  const rows = query(`SELECT content, last_modified FROM notes WHERE user_id = ${userId} AND date = '${escape(date)}' LIMIT 1;`)
-  if (rows[0]) {
-    return { content: rows[0].content as string, lastModified: Number(rows[0].last_modified) * 1000 }
+  const rows = query(
+    `SELECT idx, content, last_modified FROM lines WHERE user_id = ${userId} AND date = '${escape(date)}' ORDER BY idx;`
+  )
+  if (rows.length) {
+    const content = rows.map((r: any) => r.content as string).join('\n')
+    const lastModified = Math.max(...rows.map((r: any) => Number(r.last_modified))) * 1000
+    return { content, lastModified }
   }
   return undefined
 }
 
 export function upsertNote(userId: number, date: string, content: string) {
   initDB()
-  run(`INSERT INTO notes (user_id, date, content, last_modified) VALUES (${userId}, '${escape(date)}', '${escape(content)}', strftime('%s','now')) ON CONFLICT(user_id, date) DO UPDATE SET content='${escape(content)}', last_modified=strftime('%s','now');`)
+  const lines = content
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l !== '')
+
+  let idx = 0
+  for (const line of lines) {
+    run(
+      `INSERT INTO lines (user_id, date, idx, content, last_modified) VALUES (${userId}, '${escape(
+        date
+      )}', ${idx}, '${escape(line)}', strftime('%s','now')) ON CONFLICT(user_id, date, idx) DO UPDATE SET content='${escape(
+        line
+      )}', last_modified=strftime('%s','now');`
+    )
+    idx++
+  }
+  run(`DELETE FROM lines WHERE user_id = ${userId} AND date = '${escape(date)}' AND idx >= ${idx};`)
 }
 
 export function getAllNotes() {
   initDB()
   const rows = query(
-    `SELECT users.username as username, notes.date as date, notes.content as content FROM notes JOIN users ON notes.user_id = users.id ORDER BY notes.date DESC;`
-  )
-  return rows as { username: string; date: string; content: string }[]
+    `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content FROM lines JOIN users ON lines.user_id = users.id ORDER BY lines.date DESC, lines.idx;`
+  ) as { username: string; date: string; idx: number; content: string }[]
+  const map = new Map<string, { username: string; date: string; lines: string[] }>()
+  for (const row of rows) {
+    const key = `${row.username}|${row.date}`
+    if (!map.has(key)) {
+      map.set(key, { username: row.username, date: row.date, lines: [] })
+    }
+    map.get(key)!.lines[row.idx] = row.content
+  }
+  return Array.from(map.values()).map(v => ({
+    username: v.username,
+    date: v.date,
+    content: v.lines.join('\n')
+  }))
 }
