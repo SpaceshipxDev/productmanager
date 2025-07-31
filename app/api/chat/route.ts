@@ -22,11 +22,9 @@ export async function POST(request: NextRequest) {
   try {
     const res = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [
-        { role: 'user', parts: `All notes from every user:\n${noteText}` },
-        { role: 'user', parts: question }
-      ]
-    })
+      contents: `All notes from every user:\n${noteText}\n\n${question}`
+    });
+
     return NextResponse.json({ text: res.text })
   } catch (err) {
     console.error(err)
