@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/auth'
 import {
   initDB,
-  getAllNotes,
+  getAllLines,
   getSmartTuples,
   saveSmartTuples,
 } from '@/lib/db'
@@ -20,10 +20,12 @@ export async function GET(request: NextRequest) {
   console.log("function is being run")
 
   console.log("\n Background process called")
-  const notes = getAllNotes()
-  const noteText = notes
-    .map(n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`)
-    .join('\n\n')
+  const lines = getAllLines()
+  const noteText = lines
+    .map(
+      l => `${l.username} - ${l.date} [${l.idx}] (last modified ${new Date(l.lastModified).toISOString()}): ${l.content}`
+    )
+    .join('\n')
 
   const prompt =
     `Summarize the status updates for each work order ID from the following log entries. ` +
@@ -53,3 +55,4 @@ export async function GET(request: NextRequest) {
   const tuples = getSmartTuples()
   return NextResponse.json({ tuples })
 }
+
