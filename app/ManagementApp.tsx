@@ -14,6 +14,11 @@ interface Message {
   content: string;
   timestamp: Date;
 }
+
+interface TupleItem {
+  id: string;
+  summary: string;
+}
  
 export default function ManagementApp() {
   const [messages, setMessages] = useState<Message[]>([
@@ -27,6 +32,7 @@ export default function ManagementApp() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [tuples, setTuples] = useState<TupleItem[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -37,6 +43,25 @@ export default function ManagementApp() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/smarttuple');
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setTuples(data.tuples || []);
+        }
+      } catch {}
+    }
+    load();
+    const id = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   const handleAISubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +188,19 @@ export default function ManagementApp() {
       <div className="flex flex-col h-screen pt-16 bg-[#fafafa]">
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-[680px] mx-auto px-4 py-20 space-y-10">
+            {tuples.length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-gray-700 mb-2">Smart Tuples</h2>
+                <ul className="space-y-1 text-sm text-gray-700">
+                  {tuples.map(t => (
+                    <li key={t.id} className="flex gap-2">
+                      <span className="font-mono font-medium">{t.id}</span>
+                      <span className="flex-1">{t.summary}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {messages.map((message, index) => (
               <div
                 key={message.id}
