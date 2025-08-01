@@ -73,6 +73,22 @@ export default function JournalApp() {
     setCurrentContent(entry?.content || '');
   }, [selectedDate, entries, dateKey]);
 
+  // Trigger smart tuple refresh in the background
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      try {
+        await fetch('/api/smarttuple');
+      } catch {}
+    }
+    refresh();
+    const id = setInterval(refresh, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
   useEffect(() => {
     if (currentContent === (entries[dateKey]?.content || '')) return;
 
