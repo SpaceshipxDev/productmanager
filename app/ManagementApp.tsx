@@ -48,6 +48,7 @@ export default function ManagementApp() {
     let cancelled = false;
     async function load() {
       try {
+        console.log("Calling background...")
         const res = await fetch('/api/smarttuple');
         if (res.ok) {
           const data = await res.json();

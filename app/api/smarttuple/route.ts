@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
   const summaryLast = getSmartTupleTimestamp()
 
   if (summaryLast < notesLast) {
+    console.log("\n Background process called")
     const notes = getAllNotes()
     const noteText = notes
       .map(n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`)
@@ -40,7 +41,10 @@ export async function GET(request: NextRequest) {
         contents: prompt,
       })
       const text = res.text ?? ''
-      const parsed = JSON.parse(text)
+      console.log("\n res:, ", text)
+
+      const cleaned = text.replace(/^```json\n/, '').replace(/```$/, '')
+      const parsed = JSON.parse(cleaned)
       const items = Object.entries(parsed).map(([id, summary]) => ({ id, summary: String(summary) }))
       saveSmartTuples(items)
     } catch (err) {
