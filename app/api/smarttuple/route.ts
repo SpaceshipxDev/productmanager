@@ -3,8 +3,6 @@ import { verifySession } from '@/lib/auth'
 import {
   initDB,
   getAllNotes,
-  getLatestNoteTimestamp,
-  getSmartTupleTimestamp,
   getSmartTuples,
   saveSmartTuples,
 } from '@/lib/db'
@@ -19,38 +17,37 @@ export async function GET(request: NextRequest) {
 
   initDB()
 
-  const notesLast = getLatestNoteTimestamp()
-  const summaryLast = getSmartTupleTimestamp()
+  console.log("function is being run")
 
-  if (summaryLast < notesLast) {
-    console.log("\n Background process called")
-    const notes = getAllNotes()
-    const noteText = notes
-      .map(n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`)
-      .join('\n\n')
+  console.log("\n Background process called")
+  const notes = getAllNotes()
+  const noteText = notes
+    .map(n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`)
+    .join('\n\n')
 
-    const prompt =
-      `Summarize the status updates for each work order ID from the following log entries. ` +
-      `Entries may contain typos in the IDs (for example missing characters or swapped letters). ` +
-      `Group together IDs that appear to refer to the same order. ` +
-      `Return ONLY valid JSON mapping each ID to a concise summary.\n\n${noteText}`
+  const prompt =
+    `Summarize the status updates for each work order ID from the following log entries. ` +
+    `Entries may contain typos in the IDs (for example missing characters or swapped letters). ` +
+    `Group together IDs that appear to refer to the same order. ` +
+    `Return ONLY valid JSON mapping each ID to a concise summary.\n\n${noteText}`
 
-    try {
-      const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      })
-      const text = res.text ?? ''
-      console.log("\n res:, ", text)
+  console.log(prompt) 
+  
+  try {
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    })
+    const text = res.text ?? ''
+    console.log("\n res:, ", text)
 
-      const cleaned = text.replace(/^```json\n/, '').replace(/```$/, '')
-      const parsed = JSON.parse(cleaned)
-      const items = Object.entries(parsed).map(([id, summary]) => ({ id, summary: String(summary) }))
-      saveSmartTuples(items)
-    } catch (err) {
-      console.error(err)
-      return NextResponse.json({ error: 'LLM error' }, { status: 500 })
-    }
+    const cleaned = text.replace(/^```json\n/, '').replace(/```$/, '')
+    const parsed = JSON.parse(cleaned)
+    const items = Object.entries(parsed).map(([id, summary]) => ({ id, summary: String(summary) }))
+    saveSmartTuples(items)
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'LLM error' }, { status: 500 })
   }
 
   const tuples = getSmartTuples()
