@@ -37,6 +37,7 @@ export default function JournalApp() {
   const [showSaved, setShowSaved] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const smartTupleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
@@ -73,27 +74,16 @@ export default function JournalApp() {
     setCurrentContent(entry?.content || '');
   }, [selectedDate, entries, dateKey]);
 
-  // Trigger smart tuple refresh in the background
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      try {
-        await fetch('/api/smarttuple');
-      } catch {}
-    }
-    refresh();
-    const id = setInterval(refresh, 30000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
+  // Schedule smart tuple generation after user stops editing
 
   useEffect(() => {
     if (currentContent === (entries[dateKey]?.content || '')) return;
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
+    }
+    if (smartTupleTimeoutRef.current) {
+      clearTimeout(smartTupleTimeoutRef.current);
     }
 
     setIsSaving(true);
@@ -116,10 +106,18 @@ export default function JournalApp() {
       setTimeout(() => setShowSaved(false), 2000);
     }, 500);
 
+    smartTupleTimeoutRef.current = setTimeout(() => {
+      fetch('/api/smarttuple').catch(() => {});
+    }, 3000);
+
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
+      }
+      if (smartTupleTimeoutRef.current) {
+        clearTimeout(smartTupleTimeoutRef.current);
+        smartTupleTimeoutRef.current = null;
       }
       setIsSaving(false);
     };
