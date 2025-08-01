@@ -118,6 +118,20 @@ export function getAllNotes() {
   }))
 }
 
+export function getAllLines() {
+  initDB()
+  const rows = query(
+    `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content, lines.last_modified as last_modified FROM lines JOIN users ON lines.user_id = users.id ORDER BY lines.date DESC, lines.idx;`
+  ) as { username: string; date: string; idx: number; content: string; last_modified: number }[]
+  return rows.map(r => ({
+    username: r.username,
+    date: r.date,
+    idx: r.idx,
+    content: r.content,
+    lastModified: Number(r.last_modified) * 1000,
+  }))
+}
+
 export function getLatestNoteTimestamp() {
   initDB()
   const rows = query(`SELECT MAX(last_modified) as last FROM lines;`) as { last: number }[]
