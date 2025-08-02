@@ -136,7 +136,7 @@ export default function ManagementApp() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-[15px] font-medium text-gray-600 tracking-tight">
-                生产控制
+                Estara
               </h1>
             </div>
 

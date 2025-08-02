@@ -26,13 +26,6 @@ async function main() {
   const chat = ai.chats.create({
     model: "gemini-2.5-flash",
     history: [
-      { role: "user", parts: [{ text: "Hello" }] },
-      {
-        role: "model",
-        parts: [
-          { text: "Great to meet you. Ask me about the lines table." },
-        ],
-      },
     ],
   });
 
@@ -50,11 +43,14 @@ async function main() {
       try {
         const rows = await getLines();
         const linesText = rows
-          .map((r) => `${r.username} | ${r.date} | ${r.idx}: ${r.content}`)
+          .map((r) => `Order ${r.content}. Last edited ${r.last_modified} by ${r.username}`)
           .join("\n");
+
+        const message = `I'm the factory owner. You are my manager responsible for telling me the production status of jobs in the factory. Here is my live database: ${linesText}. My question: ${input}.  `
+        console.log("\n Prompt: ", message)
         const response = await chat.sendMessage({
-          message: `Lines table:\n${linesText}\n\nUser question: ${input}`,
-        });
+          message
+        })
         console.log(response.text);
       } catch (err) {
         console.error("Error:", err.message);
