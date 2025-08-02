@@ -37,11 +37,11 @@ export default function LoginInterface() {
             location.href = "/";
           } else {
             const data = await reg.json();
-            setError(data.error || "Unable to register");
+            setError(data.error || "无法注册");
           }
         } else {
           const data = await res.json();
-          setError(data.error || "Invalid credentials");
+          setError(data.error || "凭证无效");
         }
       } finally {
         setIsLoading(false);
@@ -76,10 +76,10 @@ export default function LoginInterface() {
             <span className="text-white text-2xl font-medium">CNC</span>
           </motion.div>
           <h1 className="text-2xl font-medium text-gray-900">
-            Production Log
+            生产日志
           </h1>
           <p className="text-gray-500 mt-2">
-            Continue to your workspace
+            继续进入你的工作区
           </p>
         </div>
 
@@ -96,14 +96,14 @@ export default function LoginInterface() {
               >
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Username
+                    用户名
                   </label>
                   <Input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Enter your username"
+                    placeholder="请输入用户名"
                     className="h-12 px-4 text-base border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 rounded-xl transition-all"
                     autoFocus
                   />
@@ -128,7 +128,7 @@ export default function LoginInterface() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Password
+                    密码
                   </label>
                   <div className="relative">
                     <Input
@@ -136,7 +136,7 @@ export default function LoginInterface() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Enter your password"
+                      placeholder="请输入密码"
                       className="h-12 px-4 pr-12 text-base border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 rounded-xl transition-all"
                       autoFocus
                     />
@@ -181,7 +181,7 @@ export default function LoginInterface() {
                 />
               ) : (
                 <span className="flex items-center justify-center">
-                  Continue
+                  继续
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </span>
               )}
@@ -198,9 +198,9 @@ export default function LoginInterface() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-gray-500">
-            New to Production Log?{' '}
+            第一次使用生产日志?{' '}
             <button className="text-gray-900 font-medium hover:underline">
-              Create an account
+              创建账号
             </button>
           </p>
         </motion.div>

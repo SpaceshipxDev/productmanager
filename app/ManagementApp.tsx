@@ -85,12 +85,12 @@ const formatTimestamp = (date: Date): string => {
   
   if (hours < 1) {
     const minutes = Math.floor(diff / (1000 * 60));
-    return `${minutes}m ago`;
+    return `${minutes}分钟前`;
   } else if (hours < 24) {
-    return `${hours}h ago`;
+    return `${hours}小时前`;
   } else {
     const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return `${days}天前`;
   }
 };
 
@@ -136,7 +136,7 @@ export default function ManagementApp() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-[15px] font-medium text-gray-600 tracking-tight">
-                Production Control
+                生产控制
               </h1>
             </div>
 
@@ -159,7 +159,7 @@ export default function ManagementApp() {
                     )}
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>Daily Log</span>
+                    <span>日志</span>
                   </Link>
                   <Link
                     href="/management"
@@ -171,7 +171,7 @@ export default function ManagementApp() {
                     )}
                   >
                     <BarChart3 className="w-3.5 h-3.5" />
-                    <span>Management</span>
+                    <span>管理</span>
                   </Link>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export default function ManagementApp() {
                 className="h-8 px-3 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                Logout
+                退出
               </Button>
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function ManagementApp() {
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tuples..."
+                  placeholder="搜索记录..."
                   className="pl-10 h-10 bg-gray-50/50 border-gray-200/50 rounded-lg text-[14px] placeholder:text-gray-400"
                 />
               </div>
@@ -215,14 +215,14 @@ export default function ManagementApp() {
                 className="h-10 px-4 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
               >
                 <Filter className="h-3.5 w-3.5 mr-2" />
-                Filter
+                筛选
               </Button>
               <Button
                 variant="ghost"
                 className="h-10 px-4 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
               >
                 <Plus className="h-3.5 w-3.5 mr-2" />
-                New Tuple
+                新建记录
               </Button>
             </div>
 
@@ -295,9 +295,9 @@ export default function ManagementApp() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem className="text-[12px]">Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-[12px]">Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem className="text-[12px] text-red-600">Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-[12px]">编辑</DropdownMenuItem>
+                        <DropdownMenuItem className="text-[12px]">复制</DropdownMenuItem>
+                        <DropdownMenuItem className="text-[12px] text-red-600">删除</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -348,13 +348,13 @@ export default function ManagementApp() {
               animate={{ opacity: 1 }}
               className="text-center py-24"
             >
-              <p className="text-[14px] text-gray-500 mb-4">No tuples found</p>
+              <p className="text-[14px] text-gray-500 mb-4">未找到记录</p>
               <Button
                 variant="ghost"
                 className="h-9 px-4 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-700 hover:text-gray-900"
               >
                 <Plus className="h-3.5 w-3.5 mr-2" />
-                Create your first tuple
+                创建你的第一条记录
               </Button>
             </motion.div>
           )}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { format, addDays, subDays, isToday, isSameDay } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, LogOut, BarChart3, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -147,7 +148,7 @@ export default function JournalApp() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-[15px] font-medium text-gray-600 tracking-tight">
-                Production Control
+                生产控制
               </h1>
             </div>
 
@@ -170,7 +171,7 @@ export default function JournalApp() {
                     )}
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>Daily Log</span>
+                    <span>日志</span>
                   </Link>
                   <Link
                     href="/management"
@@ -182,7 +183,7 @@ export default function JournalApp() {
                     )}
                   >
                     <BarChart3 className="w-3.5 h-3.5" />
-                    <span>Management</span>
+                    <span>管理</span>
                   </Link>
                 </div>
               </div>
@@ -195,7 +196,7 @@ export default function JournalApp() {
                 className="h-8 px-3 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                Logout
+                退出
               </Button>
             </div>
           </div>
@@ -212,10 +213,10 @@ export default function JournalApp() {
           <div className="mt-8">
             <div className="mb-8">
               <h2 className="text-3xl font-light text-gray-900 tracking-tight">
-                {format(selectedDate, 'EEEE')}
+                {format(selectedDate, 'EEEE', { locale: zhCN })}
               </h2>
               <p className="text-lg text-gray-500 mt-1 font-normal">
-                {format(selectedDate, 'MMMM d, yyyy')}
+                {format(selectedDate, 'yyyy年M月d日', { locale: zhCN })}
               </p>
             </div>
 
@@ -239,7 +240,7 @@ export default function JournalApp() {
                         isToday(selectedDate) ? 'text-black' : 'text-gray-700'
                       )}
                     >
-                      {isToday(selectedDate) ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
+                      {isToday(selectedDate) ? '今天' : format(selectedDate, 'yyyy年M月d日', { locale: zhCN })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -273,7 +274,7 @@ export default function JournalApp() {
                       exit={{ opacity: 0, y: 4 }}
                       className="text-[11px] font-medium text-gray-400"
                     >
-                      Saving...
+                      保存中...
                     </motion.span>
                   )}
                   {showSaved && !isSaving && (
@@ -283,7 +284,7 @@ export default function JournalApp() {
                       exit={{ opacity: 0, y: 4 }}
                       className="text-[11px] font-medium text-green-600"
                     >
-                      Saved
+                      已保存
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -310,7 +311,7 @@ export default function JournalApp() {
                   animate={{ opacity: 1 }}
                   className="absolute bottom-4 right-4 text-xs text-gray-400 font-sans"
                 >
-                  {currentContent.split('\n').filter(line => line.trim() !== '').length} entries
+                  {currentContent.split('\n').filter(line => line.trim() !== '').length} 条记录
                 </motion.div>
               )}
             </div>
@@ -320,7 +321,7 @@ export default function JournalApp() {
                 animate={{ opacity: 1 }}
                 className="mt-8 text-xs text-gray-400"
               >
-                Last updated {format(entries[dateKey].lastModified, 'h:mm a')}
+                最后更新 {format(entries[dateKey].lastModified, 'HH:mm')}
               </motion.div>
             )}
           </div>
