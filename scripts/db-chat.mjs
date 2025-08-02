@@ -2,15 +2,23 @@ import { GoogleGenAI } from "@google/genai";
 import sqlite3 from "sqlite3";
 import readline from "readline";
 
-const db = new sqlite3.Database(process.env.DB_PATH || "./lines.db");
+// Use the same SQLite database as the main application.
+// Defaults to `database.sqlite` so the script can access the journal lines.
+const db = new sqlite3.Database(process.env.DB_PATH || "./database.sqlite");
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
+// Fetch all journal lines along with user and date information.
 async function getLines() {
   return new Promise((resolve, reject) => {
-    db.all('SELECT id, "desc", time FROM lines', (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows);
-    });
+    db.all(
+      `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content
+       FROM lines JOIN users ON lines.user_id = users.id
+       ORDER BY lines.date DESC, lines.idx;`,
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      }
+    );
   });
 }
 
@@ -42,7 +50,7 @@ async function main() {
       try {
         const rows = await getLines();
         const linesText = rows
-          .map((r) => `id: ${r.id}, desc: ${r.desc}, time: ${r.time}`)
+          .map((r) => `${r.username} | ${r.date} | ${r.idx}: ${r.content}`)
           .join("\n");
         const response = await chat.sendMessage({
           message: `Lines table:\n${linesText}\n\nUser question: ${input}`,
