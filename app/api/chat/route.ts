@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/auth'
-import { getAllNotes, initDB } from '@/lib/db'
 import { GoogleGenAI } from '@google/genai'
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY || '' })
@@ -12,14 +11,6 @@ export async function POST(request: NextRequest) {
 
   const { question, history } = await request.json()
   if (!question) return NextResponse.json({ error: 'Missing question' }, { status: 400 })
-
-  initDB()
-  const notes = getAllNotes()
-  const noteText = notes
-    .map(
-      n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`
-    )
-    .join('\n\n')
 
   try {
     const formattedHistory = Array.isArray(history)
@@ -35,8 +26,9 @@ export async function POST(request: NextRequest) {
     })
 
     const res = await chat.sendMessage({
-      message: `All notes from every user:\n${noteText}\n\n${question}`,
+      message: question,
     })
+    console.log(res.text) 
 
     return NextResponse.json({ text: res.text })
   } catch (err) {
