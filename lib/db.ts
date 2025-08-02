@@ -114,7 +114,7 @@ export function getAllNotes() {
     username: v.username,
     date: v.date,
     content: v.lines.join('\n'),
-    lastModified: Math.max(...v.lastModified) * 1000,
+    lastModified: new Date(Math.max(...v.lastModified) * 1000).toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }),
   }))
 }
 
@@ -128,7 +128,7 @@ export function getAllLines() {
     date: r.date,
     idx: r.idx,
     content: r.content,
-    lastModified: Number(r.last_modified) * 1000,
+    lastModified: new Date(Number(r.last_modified) * 1000).toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }),
   }))
 }
 

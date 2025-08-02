@@ -11,12 +11,12 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 async function getLines() {
   return new Promise((resolve, reject) => {
     db.all(
-      `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content
+      `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content, lines.last_modified as last_modified
        FROM lines JOIN users ON lines.user_id = users.id
        ORDER BY lines.date DESC, lines.idx;`,
       (err, rows) => {
         if (err) return reject(err);
-        resolve(rows);
+        resolve(rows.map(r => ({...r, last_modified: new Date(r.last_modified * 1000).toLocaleString('en-US', { timeZone: 'Asia/Shanghai' })})));
       }
     );
   });
@@ -43,10 +43,11 @@ async function main() {
       try {
         const rows = await getLines();
         const linesText = rows
-          .map((r) => `Order ${r.content}. Last edited ${r.last_modified} by ${r.username}`)
+          .map((r) => `Order ${r.content}. Last edited ${r.last_modified} by employee ${r.username}`)
           .join("\n");
 
-        const message = `I'm the factory owner. You are my manager responsible for telling me the production status of jobs in the factory. Here is my live database: ${linesText}. My question: ${input}.  `
+        const shanghaiTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' });
+        const message = `I'm the factory owner. You are my manager responsible for telling me the production /employee status of jobs in the factory. The current time in Shanghai is ${shanghaiTime}. Here is my live database: ${linesText}. My question: ${input}.  `
         console.log("\n Prompt: ", message)
         const response = await chat.sendMessage({
           message
