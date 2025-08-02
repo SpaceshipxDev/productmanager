@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format, addDays, subDays, isToday, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, LogOut, BarChart3, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut, BarChart3, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ interface JournalEntry {
   content: string;
   lastModified: Date;
 }
+
 
 const logPlaceholderText = `记录今日工单状态，一行一个...
 
@@ -169,7 +170,7 @@ export default function JournalApp() {
                         : 'text-gray-500 hover:text-gray-700'
                     )}
                   >
-                    <FileText className="w-3.5 h-3.5" />
+                    <NotebookPen className="w-3.5 h-3.5" />
                     <span>日志</span>
                   </Link>
                   <Link

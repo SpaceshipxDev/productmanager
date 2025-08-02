@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileText, BarChart3 } from 'lucide-react';
+import { BarChart3, Notebook } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -158,7 +158,7 @@ export default function ManagementApp() {
                         : 'text-gray-500 hover:text-gray-700'
                     )}
                   >
-                    <FileText className="w-3.5 h-3.5" />
+                    <Notebook className="w-3.5 h-3.5" />
                     <span>日志</span>
                   </Link>
                   <Link
