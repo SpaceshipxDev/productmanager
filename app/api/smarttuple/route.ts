@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/auth'
-import {
-  initDB,
-  getAllLines,
-  getSmartTuples,
+import { 
+  initDB, 
+  getAllLines, 
+  getSmartTuples, 
   saveSmartTuples,
 } from '@/lib/db'
 import { GoogleGenAI } from '@google/genai'
@@ -23,29 +23,59 @@ export async function GET(request: NextRequest) {
   const lines = getAllLines()
   const noteText = lines
     .map(
-      l => `${l.username} - ${l.date} [${l.idx}] (last modified ${new Date(l.lastModified).toISOString()}): ${l.content}`
+      l => {
+        const shanghaiTime = new Date(l.lastModified).toLocaleString('zh-CN', {
+          timeZone: 'Asia/Shanghai',
+          hour12: false // optional, for 24h time
+        });
+        return `${l.username}: ${l.content}. (last modified ${shanghaiTime})`;
+      }
     )
     .join('\n')
+  console.log("extracted: ", noteText)
 
-  const prompt =
-    `Summarize the status updates for each work order ID from the following log entries. ` +
-    `Entries may contain typos in the IDs (for example missing characters or swapped letters). ` +
-    `Group together IDs that appear to refer to the same order. ` +
-    `Return ONLY valid JSON mapping each ID to a concise summary.\n\n${noteText}`
-
-  console.log(prompt) 
+  const prompt = `
   
+    The notes is multiple entries of attributes for multiple ynmx ids. your job is to single out each id and 
+    summarize the progress update for each. 
+    
+    Return your response as plain text in the format:
+    ID: SUMMARY
+    ID2: SUMMARY2
+
+    Each line should have the ID, followed by a colon and space, then the summary. Include edit time in the summary.
+    Do not include any other text, markdown, or formatting.
+
+    The notes: \n\n${noteText}`
+
+  console.log(prompt)
+
   try {
     const res = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-lite',
       contents: prompt,
     })
     const text = res.text ?? ''
     console.log("\n res:, ", text)
 
-    const cleaned = text.replace(/^```json\n/, '').replace(/```$/, '')
-    const parsed = JSON.parse(cleaned)
-    const items = Object.entries(parsed).map(([id, summary]) => ({ id, summary: String(summary) }))
+    // Parse the plain text format
+    const items = text
+      .trim()
+      .split('\n')
+      .filter(line => line.trim()) // Remove empty lines
+      .map(line => {
+        // Split by first ": " to handle summaries that might contain colons
+        const colonIndex = line.indexOf(': ')
+        if (colonIndex === -1) {
+          console.warn(`Skipping malformed line: ${line}`)
+          return null
+        }
+        const id = line.substring(0, colonIndex).trim()
+        const summary = line.substring(colonIndex + 2).trim()
+        return { id, summary }
+      })
+      .filter(item => item !== null) as { id: string; summary: string }[]
+
     saveSmartTuples(items)
   } catch (err) {
     console.error(err)
@@ -55,4 +85,3 @@ export async function GET(request: NextRequest) {
   const tuples = getSmartTuples()
   return NextResponse.json({ tuples })
 }
-
