@@ -10,20 +10,33 @@ export async function POST(request: NextRequest) {
   const session = verifySession(sessionToken)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { question } = await request.json()
+  const { question, history } = await request.json()
   if (!question) return NextResponse.json({ error: 'Missing question' }, { status: 400 })
 
   initDB()
   const notes = getAllNotes()
   const noteText = notes
-    .map(n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`)
+    .map(
+      n => `${n.username} - ${n.date} (last modified ${new Date(n.lastModified).toISOString()}):\n${n.content}`
+    )
     .join('\n\n')
 
   try {
-    const res = await ai.models.generateContent({
+    const formattedHistory = Array.isArray(history)
+      ? history.map((m: { role: 'user' | 'model'; text: string }) => ({
+          role: m.role,
+          parts: [{ text: m.text }],
+        }))
+      : []
+
+    const chat = ai.chats.create({
       model: 'gemini-2.5-flash',
-      contents: `All notes from every user:\n${noteText}\n\n${question}`
-    });
+      history: formattedHistory,
+    })
+
+    const res = await chat.sendMessage({
+      message: `All notes from every user:\n${noteText}\n\n${question}`,
+    })
 
     return NextResponse.json({ text: res.text })
   } catch (err) {

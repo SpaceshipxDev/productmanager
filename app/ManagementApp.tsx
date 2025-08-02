@@ -24,7 +24,7 @@ export default function ManagementApp() {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || isProcessing) return;
 
@@ -37,23 +37,45 @@ export default function ManagementApp() {
       timestamp: new Date(),
     };
 
+    const history = entries
+      .slice()
+      .reverse()
+      .flatMap(entry => [
+        { role: "user" as const, text: entry.query },
+        { role: "model" as const, text: entry.response },
+      ]);
+
     setEntries(prev => [newEntry, ...prev]);
     setQuery("");
 
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: newEntry.query, history }),
+      });
+      const data = await res.json();
       setEntries(prev =>
         prev.map(entry =>
           entry.id === newEntry.id
             ? {
                 ...entry,
-                response:
-                  "This is where the AI response would appear. The interface maintains a clean, information-focused design.",
+                response: data.text || "No response from AI.",
               }
             : entry
         )
       );
+    } catch (err) {
+      setEntries(prev =>
+        prev.map(entry =>
+          entry.id === newEntry.id
+            ? { ...entry, response: "Error fetching response." }
+            : entry
+        )
+      );
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   useEffect(() => {
