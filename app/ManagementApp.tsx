@@ -166,10 +166,7 @@ export default function ManagementApp() {
               {entries.map((entry, index) => (
                 <article
                   key={entry.id}
-                  className={cn(
-                    "group relative transition-all duration-300",
-                    focusedIndex === index && "scale-[1.02]"
-                  )}
+                  className={cn("group relative")}
                   onMouseEnter={() => setFocusedIndex(index)}
                   onMouseLeave={() => setFocusedIndex(null)}
                 >
