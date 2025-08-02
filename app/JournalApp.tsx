@@ -104,7 +104,6 @@ export default function JournalApp() {
       }).catch(() => {});
       setIsSaving(false);
       setShowSaved(true);
-      setTimeout(() => setShowSaved(false), 2000);
     }, 500);
 
     smartTupleTimeoutRef.current = setTimeout(() => {
