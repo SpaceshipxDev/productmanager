@@ -1,112 +1,66 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { LogOut, ChevronRight, Search, Filter, Plus, MoreHorizontal } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { BarChart3, Notebook } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useState, useRef, useEffect } from "react";
+import { Search, ArrowUp, LogOut, BarChart3, NotebookPen } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-interface SmartTuple {
+interface Entry {
   id: string;
-  content: string;
+  query: string;
+  response: string;
   timestamp: Date;
-  tags?: string[];
 }
 
-// Mock data generator
-const generateMockTuples = (): SmartTuple[] => {
-  const tuples: SmartTuple[] = [
-    {
-      id: "tuple-001",
-      content: "YNMX-2025-06-07: Quality inspection failed due to spindle runout exceeding tolerance. Main shaft vibration detected at 0.08mm, tolerance is 0.05mm. Requires immediate recalibration of the CNC machine axis alignment system.",
-      timestamp: new Date('2025-01-28T10:30:00'),
-      tags: ["quality-control", "cnc", "urgent"]
-    },
-    {
-      id: "tuple-002",
-      content: "YNMX-2025-07-21: Currently in machining phase 3 of 5. Surface finishing operations underway. Expected completion by EOD. Material: Aluminum 6061-T6. Running at 80% optimal speed due to tool wear considerations.",
-      timestamp: new Date('2025-01-28T09:15:00'),
-      tags: ["in-progress", "aluminum", "phase-3"]
-    },
-    {
-      id: "tuple-003",
-      content: "YNMX-2025-04-20: Awaiting material delivery. Stainless steel 316L sheets delayed from supplier. New ETA: 2025-01-30. Production line 4 idle. Consider reallocating resources to backlog items.",
-      timestamp: new Date('2025-01-28T08:45:00'),
-      tags: ["pending", "materials", "delay"]
-    },
-    {
-      id: "tuple-004",
-      content: "Production efficiency report: Line 2 operating at 94% capacity. 127 units completed in last shift. Zero defects reported. Maintenance scheduled for next week.",
-      timestamp: new Date('2025-01-27T16:30:00'),
-      tags: ["report", "efficiency", "line-2"]
-    },
-    {
-      id: "tuple-005",
-      content: "Tool inventory alert: Carbide end mills running low. Current stock: 12 units. Recommended reorder point: 20 units. Auto-purchase order generated for approval.",
-      timestamp: new Date('2025-01-27T14:20:00'),
-      tags: ["inventory", "tools", "alert"]
-    },
-    {
-      id: "tuple-006",
-      content: "YNMX-2025-08-15: Completed successfully. Final inspection passed all parameters. Surface roughness: 0.8 μm Ra. Dimensional accuracy within ±0.02mm. Ready for shipping.",
-      timestamp: new Date('2025-01-27T11:00:00'),
-      tags: ["completed", "passed", "shipping-ready"]
-    },
-    {
-      id: "tuple-007",
-      content: "Shift handover notes: Machine 3 experiencing intermittent coolant flow issues. Temporary fix applied. Full maintenance required within 48 hours. All other systems operational.",
-      timestamp: new Date('2025-01-26T22:00:00'),
-      tags: ["maintenance", "coolant", "machine-3"]
-    },
-    {
-      id: "tuple-008",
-      content: "Customer specification update for order YNMX-2025-09-10: Tolerance tightened from ±0.05mm to ±0.03mm. Engineering review required. Estimated additional setup time: 2 hours.",
-      timestamp: new Date('2025-01-26T15:30:00'),
-      tags: ["specification", "customer", "review-needed"]
-    }
-  ];
-  return tuples;
-};
-
-const formatTimestamp = (date: Date): string => {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  
-  if (hours < 1) {
-    const minutes = Math.floor(diff / (1000 * 60));
-    return `${minutes}分钟前`;
-  } else if (hours < 24) {
-    return `${hours}小时前`;
-  } else {
-    const days = Math.floor(hours / 24);
-    return `${days}天前`;
-  }
-};
-
 export default function ManagementApp() {
-  const [tuples, setTuples] = useState<SmartTuple[]>([]);
-  const [expandedTuple, setExpandedTuple] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
-  const pathname = usePathname();
-  const currentView = pathname.startsWith('/management') ? 'management' : 'journal';
+  const [query, setQuery] = useState("");
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim() || isProcessing) return;
+
+    setIsProcessing(true);
+
+    const newEntry: Entry = {
+      id: Date.now().toString(),
+      query: query.trim(),
+      response: "Processing your query...",
+      timestamp: new Date(),
+    };
+
+    setEntries(prev => [newEntry, ...prev]);
+    setQuery("");
+
+    setTimeout(() => {
+      setEntries(prev =>
+        prev.map(entry =>
+          entry.id === newEntry.id
+            ? {
+                ...entry,
+                response:
+                  "This is where the AI response would appear. The interface maintains a clean, information-focused design.",
+              }
+            : entry
+        )
+      );
+      setIsProcessing(false);
+    }, 1500);
+  };
 
   useEffect(() => {
-    // Simulate loading tuples
-    setTuples(generateMockTuples());
-  }, []);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [entries]);
 
   const handleLogout = async () => {
     try {
@@ -116,18 +70,8 @@ export default function ManagementApp() {
     }
   };
 
-  const filteredTuples = tuples.filter(tuple => {
-    const matchesSearch = searchQuery === '' || 
-      tuple.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tuple.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesTags = selectedTags.length === 0 || 
-      selectedTags.some(tag => tuple.tags?.includes(tag));
-    
-    return matchesSearch && matchesTags;
-  });
-
-  const allTags = Array.from(new Set(tuples.flatMap(t => t.tags || [])));
+  const pathname = usePathname();
+  const currentView = pathname.startsWith('/management') ? 'management' : 'journal';
 
   return (
     <div className="min-h-screen bg-white">
@@ -135,9 +79,7 @@ export default function ManagementApp() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-[15px] font-medium text-gray-600 tracking-tight">
-                Estara
-              </h1>
+              <h1 className="text-[15px] font-medium text-gray-600 tracking-tight">Estara</h1>
             </div>
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -158,7 +100,7 @@ export default function ManagementApp() {
                         : 'text-gray-500 hover:text-gray-700'
                     )}
                   >
-                    <Notebook className="w-3.5 h-3.5" />
+                    <NotebookPen className="w-3.5 h-3.5" />
                     <span>日志</span>
                   </Link>
                   <Link
@@ -191,175 +133,104 @@ export default function ManagementApp() {
         </div>
       </header>
 
-      <motion.main
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="pt-24 pb-12"
-      >
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Search and Filter Bar */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索记录..."
-                  className="pl-10 h-10 bg-gray-50/50 border-gray-200/50 rounded-lg text-[14px] placeholder:text-gray-400"
-                />
-              </div>
-              <Button
-                variant="ghost"
-                className="h-10 px-4 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
-              >
-                <Filter className="h-3.5 w-3.5 mr-2" />
-                筛选
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-10 px-4 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
-              >
-                <Plus className="h-3.5 w-3.5 mr-2" />
-                新建记录
-              </Button>
+      <main className="mx-auto max-w-4xl px-6 pt-24 pb-32">
+        {entries.length === 0 ? (
+          <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-8">
+            <div className="space-y-2 text-center">
+              <h1 className="text-4xl font-light tracking-tight text-gray-900">Ask anything</h1>
+              <p className="text-lg text-gray-500">Precise answers to complex questions</p>
             </div>
 
-            {/* Tag filters */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {allTags.map(tag => (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-12">
+              {[
+                "Explain quantum computing",
+                "History of the internet",
+                "How does photosynthesis work"
+              ].map((suggestion) => (
                 <button
-                  key={tag}
+                  key={suggestion}
                   onClick={() => {
-                    setSelectedTags(prev =>
-                      prev.includes(tag)
-                        ? prev.filter(t => t !== tag)
-                        : [...prev, tag]
-                    );
+                    setQuery(suggestion);
+                    inputRef.current?.focus();
                   }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-[12px] font-medium transition-all",
-                    selectedTags.includes(tag)
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
-                  )}
+                  className="rounded-2xl border border-gray-200 px-5 py-3 text-sm text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50"
                 >
-                  {tag}
+                  {suggestion}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Tuples Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence mode="popLayout">
-              {filteredTuples.map((tuple, index) => (
-                <motion.div
-                  key={tuple.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ 
-                    duration: 0.2,
-                    delay: index * 0.03,
-                    layout: { duration: 0.3 }
-                  }}
+        ) : (
+          <ScrollArea className="h-[calc(100vh-12rem)]" ref={scrollRef}>
+            <div className="space-y-12 pb-8">
+              {entries.map((entry, index) => (
+                <article
+                  key={entry.id}
                   className={cn(
-                    "group relative bg-white rounded-xl border border-gray-200/50 p-5",
-                    "hover:border-gray-300/50 hover:shadow-sm",
-                    "transition-all duration-200 cursor-pointer",
-                    expandedTuple === tuple.id && "ring-2 ring-gray-900/10"
+                    "group relative transition-all duration-300",
+                    focusedIndex === index && "scale-[1.02]"
                   )}
-                  onClick={() => setExpandedTuple(expandedTuple === tuple.id ? null : tuple.id)}
+                  onMouseEnter={() => setFocusedIndex(index)}
+                  onMouseLeave={() => setFocusedIndex(null)}
                 >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-[13px] font-medium text-gray-900 mb-1">
-                        {tuple.id}
-                      </h3>
-                      <p className="text-[11px] text-gray-500">
-                        {formatTimestamp(tuple.timestamp)}
-                      </p>
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-medium text-gray-900">{entry.query}</h2>
+                    <div className="prose prose-gray max-w-none">
+                      <p className="text-gray-600 leading-relaxed">{entry.response}</p>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem className="text-[12px]">编辑</DropdownMenuItem>
-                        <DropdownMenuItem className="text-[12px]">复制</DropdownMenuItem>
-                        <DropdownMenuItem className="text-[12px] text-red-600">删除</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <time className="text-xs text-gray-400">
+                      {entry.timestamp.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </time>
                   </div>
-
-                  {/* Content */}
-                  <div className="relative">
-                    <p className={cn(
-                      "text-[13px] text-gray-700 leading-relaxed",
-                      !expandedTuple || expandedTuple !== tuple.id ? "line-clamp-3" : ""
-                    )}>
-                      {tuple.content}
-                    </p>
-                    {!expandedTuple || expandedTuple !== tuple.id ? (
-                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-                    ) : null}
-                  </div>
-
-                  {/* Tags */}
-                  {tuple.tags && tuple.tags.length > 0 && (
-                    <div className="flex items-center gap-1.5 mt-4 flex-wrap">
-                      {tuple.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 rounded-md bg-gray-100/80 text-[11px] font-medium text-gray-600"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Expand indicator */}
-                  <div className="absolute bottom-3 right-3">
-                    <ChevronRight className={cn(
-                      "h-3.5 w-3.5 text-gray-400 transition-transform duration-200",
-                      expandedTuple === tuple.id && "rotate-90"
-                    )} />
-                  </div>
-                </motion.div>
+                  <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-gray-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                </article>
               ))}
-            </AnimatePresence>
-          </div>
+            </div>
+          </ScrollArea>
+        )}
+      </main>
 
-          {/* Empty state */}
-          {filteredTuples.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-24"
+      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-4xl px-6 py-6">
+          <form onSubmit={handleSubmit} className="relative">
+            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask a question..."
+              className="h-14 w-full rounded-full border-gray-200 bg-gray-50 pl-14 pr-14 text-base transition-all placeholder:text-gray-400 focus:bg-white focus:border-gray-300 focus:ring-0 focus:ring-offset-0"
+              disabled={isProcessing}
+            />
+            <div
+              className={cn(
+                "absolute right-3 top-1/2 -translate-y-1/2 transition-all duration-200",
+                query ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
+              )}
             >
-              <p className="text-[14px] text-gray-500 mb-4">未找到记录</p>
-              <Button
-                variant="ghost"
-                className="h-9 px-4 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-700 hover:text-gray-900"
-              >
-                <Plus className="h-3.5 w-3.5 mr-2" />
-                创建你的第一条记录
-              </Button>
-            </motion.div>
-          )}
+              {isProcessing ? (
+                <div className="flex h-8 w-8 items-center justify-center">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900"
+                  aria-label="Submit query"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </form>
+          <div className="mt-2 text-center text-xs text-gray-400">Press Enter to search</div>
         </div>
-      </motion.main>
+      </div>
     </div>
   );
 }
+
