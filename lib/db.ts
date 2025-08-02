@@ -6,8 +6,6 @@ export function initDB() {
   const commands = [
     "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT);",
     "CREATE TABLE IF NOT EXISTS lines (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, idx INTEGER, content TEXT, last_modified INTEGER, UNIQUE(user_id, date, idx));",
-    "CREATE TABLE IF NOT EXISTS smart_tuples (id TEXT PRIMARY KEY, summary TEXT, last_updated INTEGER);",
-    "CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);",
   ]
   for (const cmd of commands) {
     execFileSync('sqlite3', [dbPath, cmd])
@@ -116,52 +114,4 @@ export function getAllNotes() {
     content: v.lines.join('\n'),
     lastModified: new Date(Math.max(...v.lastModified) * 1000).toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }),
   }))
-}
-
-export function getAllLines() {
-  initDB()
-  const rows = query(
-    `SELECT users.username as username, lines.date as date, lines.idx as idx, lines.content as content, lines.last_modified as last_modified FROM lines JOIN users ON lines.user_id = users.id ORDER BY lines.date DESC, lines.idx;`
-  ) as { username: string; date: string; idx: number; content: string; last_modified: number }[]
-  return rows.map(r => ({
-    username: r.username,
-    date: r.date,
-    idx: r.idx,
-    content: r.content,
-    lastModified: new Date(Number(r.last_modified) * 1000).toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }),
-  }))
-}
-
-export function getLatestNoteTimestamp() {
-  initDB()
-  const rows = query(`SELECT MAX(last_modified) as last FROM lines;`) as { last: number }[]
-  const ts = rows[0]?.last
-  return ts ? Number(ts) * 1000 : 0
-}
-
-export function getSmartTupleTimestamp() {
-  initDB()
-  const row = query(`SELECT value FROM meta WHERE key='smart_last_generated' LIMIT 1;`)[0]
-  return row ? Number(row.value) * 1000 : 0
-}
-
-export function setSmartTupleTimestamp(ts: number) {
-  initDB()
-  run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('smart_last_generated', '${ts}');`)
-}
-
-export function getSmartTuples() {
-  initDB()
-  return query(`SELECT id, summary, last_updated FROM smart_tuples ORDER BY id;`) as { id: string; summary: string; last_updated: number }[]
-}
-
-export function saveSmartTuples(items: { id: string; summary: string }[]) {
-  initDB()
-  for (const item of items) {
-    run(
-      `INSERT INTO smart_tuples (id, summary, last_updated) VALUES ('${escape(item.id)}', '${escape(item.summary)}', strftime('%s','now')) ` +
-        `ON CONFLICT(id) DO UPDATE SET summary=excluded.summary, last_updated=strftime('%s','now');`
-    )
-  }
-  setSmartTupleTimestamp(Date.now())
 }
