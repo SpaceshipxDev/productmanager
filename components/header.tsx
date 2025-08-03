@@ -1,14 +1,15 @@
 "use client";
 
-import { LogOut, BarChart3, NotebookPen } from 'lucide-react';
+import { BarChart3, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Header() {
   const pathname = usePathname();
   const currentView = pathname.startsWith('/management') ? 'management' : 'journal';
+  const [showSignOut, setShowSignOut] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -63,15 +64,37 @@ export default function Header() {
             </div>
           </div>
 
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="h-8 px-3 rounded-lg hover:bg-gray-100/80 text-[13px] font-medium text-gray-600 hover:text-gray-900"
+          <div className="relative">
+            <button
+              onClick={() => setShowSignOut(!showSignOut)}
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-full hover:bg-gray-100/60 transition-all duration-200"
             >
-              <LogOut className="h-3.5 w-3.5 mr-1.5" />
-              退出
-            </Button>
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-100 to-gray-200/80 flex items-center justify-center">
+                <span className="text-[11px] font-semibold text-gray-700">张</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-medium text-gray-900">张明</span>
+                <span className="text-[13px] text-gray-400">·</span>
+                <span className="text-[13px] text-gray-500">手工</span>
+              </div>
+            </button>
+
+            {showSignOut && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowSignOut(false)}
+                />
+                <div className="absolute right-0 top-full mt-1.5 py-1 w-36 rounded-lg bg-white/95 backdrop-blur-xl shadow-[0_4px_24px_-2px_rgba(0,0,0,0.12)] border border-gray-200/60 overflow-hidden z-50">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-3 py-2 text-left text-[13px] font-medium text-gray-700 hover:bg-gray-50/80 transition-colors"
+                  >
+                    退出登录
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
