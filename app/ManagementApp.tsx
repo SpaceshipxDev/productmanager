@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, ArrowUp, LogOut, BarChart3, NotebookPen } from "lucide-react";
+import { Search, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Header from '@/components/header';
 
 interface Entry {
   id: string;
@@ -106,76 +104,11 @@ export default function ManagementApp() {
     }
   }, [entries.length]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST' });
-    } finally {
-      location.href = '/login';
-    }
-  };
 
-  const pathname = usePathname();
-  const currentView = pathname.startsWith('/management') ? 'management' : 'journal';
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/75 backdrop-blur-xl border-b border-gray-200/40">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center">
-              <h1 className="text-[15px] font-medium text-gray-800 tracking-tight">Estara</h1>
-            </div>
-
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="relative bg-gray-100/50 rounded-full p-0.5 backdrop-blur">
-                <div
-                  className={cn(
-                    'absolute inset-y-0.5 rounded-full bg-white shadow-sm transition-all duration-300 ease-out',
-                    currentView === 'journal' ? 'left-0.5 right-1/2' : 'left-1/2 right-0.5'
-                  )}
-                />
-                <div className="relative flex items-center">
-                  <Link
-                    href="/notes"
-                    className={cn(
-                      'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-300',
-                      currentView === 'journal'
-                        ? 'text-gray-900'
-                        : 'text-gray-500 hover:text-gray-700'
-                    )}
-                  >
-                    <NotebookPen className="w-3.5 h-3.5" />
-                    <span>日志</span>
-                  </Link>
-                  <Link
-                    href="/management"
-                    className={cn(
-                      'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-300',
-                      currentView === 'management'
-                        ? 'text-gray-900'
-                        : 'text-gray-500 hover:text-gray-700'
-                    )}
-                  >
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span>管理</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                className="h-8 px-3 rounded-lg hover:bg-gray-100/50 text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                退出
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-[42rem] px-6 sm:px-8 pt-24 pb-32">
         {entries.length === 0 ? (
