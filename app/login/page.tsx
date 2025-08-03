@@ -10,41 +10,50 @@ export default function LoginInterface() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState("")
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [department, setDepartment] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [step, setStep] = useState<'username' | 'password'>('username')
+  const [step, setStep] = useState<'username' | 'password' | 'profile'>('username')
 
   const handleContinue = async () => {
     if (step === 'username' && username) {
-      setStep("password")
-    } else if (step === "password" && password) {
+      setStep('password')
+    } else if (step === 'password' && password) {
       try {
-        setIsLoading(true);
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        setIsLoading(true)
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
-        });
+        })
         if (res.ok) {
-          location.href = "/";
+          location.href = '/'
         } else if (res.status === 404) {
-          const reg = await fetch("/api/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-          });
-          if (reg.ok) {
-            location.href = "/";
-          } else {
-            const data = await reg.json();
-            setError(data.error || "无法注册");
-          }
+          setStep('profile')
         } else {
-          const data = await res.json();
-          setError(data.error || "凭证无效");
+          const data = await res.json()
+          setError(data.error || '凭证无效')
         }
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
+      }
+    } else if (step === 'profile' && name && department) {
+      try {
+        setIsLoading(true)
+        const reg = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, name, department })
+        })
+        if (reg.ok) {
+          location.href = '/'
+        } else {
+          const data = await reg.json()
+          setError(data.error || '无法注册')
+        }
+      } finally {
+        setIsLoading(false)
       }
     }
   }
@@ -55,7 +64,12 @@ export default function LoginInterface() {
     }
   }
 
-  const canContinue = step === 'username' ? username.length > 0 : password.length > 0
+  const canContinue =
+    step === 'username'
+      ? username.length > 0
+      : step === 'password'
+      ? password.length > 0
+      : name.length > 0 && department.length > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-6">
@@ -73,10 +87,10 @@ export default function LoginInterface() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="inline-flex items-center justify-center w-20 h-20 bg-black rounded-2xl mb-6"
           >
-            <span className="text-white text-2xl font-medium">CNC</span>
+            <span className="text-white text-2xl font-medium">ESTARA</span>
           </motion.div>
           <h1 className="text-2xl font-medium text-gray-900">
-            生产日志
+            Estara
           </h1>
           <p className="text-gray-500 mt-2">
             继续进入你的工作区
@@ -86,7 +100,7 @@ export default function LoginInterface() {
         {/* Form */}
         <div className="space-y-4">
           <AnimatePresence mode="wait">
-            {step === 'username' ? (
+            {step === 'username' && (
               <motion.div
                 key="username"
                 initial={{ opacity: 0, x: -20 }}
@@ -95,9 +109,7 @@ export default function LoginInterface() {
                 transition={{ duration: 0.2 }}
               >
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    用户名
-                  </label>
+                  <label className="text-sm font-medium text-gray-700">用户名</label>
                   <Input
                     type="text"
                     value={username}
@@ -109,7 +121,9 @@ export default function LoginInterface() {
                   />
                 </div>
               </motion.div>
-            ) : (
+            )}
+
+            {step === 'password' && (
               <motion.div
                 key="password"
                 initial={{ opacity: 0, x: 20 }}
@@ -127,9 +141,7 @@ export default function LoginInterface() {
                   </button>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    密码
-                  </label>
+                  <label className="text-sm font-medium text-gray-700">密码</label>
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
@@ -145,12 +157,60 @@ export default function LoginInterface() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'profile' && (
+              <motion.div
+                key="profile"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <button
+                    onClick={() => setStep('username')}
+                    className="hover:text-gray-900 transition-colors"
+                  >
+                    {username}
+                  </button>
+                  <span>/</span>
+                  <button
+                    onClick={() => setStep('password')}
+                    className="hover:text-gray-900 transition-colors"
+                  >
+                    ••••••
+                  </button>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">姓名</label>
+                    <Input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="请输入姓名"
+                      className="h-12 px-4 text-base border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 rounded-xl transition-all"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">部门</label>
+                    <Input
+                      type="text"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="请输入部门"
+                      className="h-12 px-4 text-base border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 rounded-xl transition-all"
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -198,7 +258,7 @@ export default function LoginInterface() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-gray-500">
-            第一次使用生产日志?{' '}
+            第一次使用 Estara?{' '}
             <button className="text-gray-900 font-medium hover:underline">
               创建账号
             </button>
