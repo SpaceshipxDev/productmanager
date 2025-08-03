@@ -4,12 +4,20 @@ import { BarChart3, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Header() {
   const pathname = usePathname();
   const currentView = pathname.startsWith('/management') ? 'management' : 'journal';
   const [showSignOut, setShowSignOut] = useState(false);
+  const [profile, setProfile] = useState<{ name: string; department: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => setProfile(data?.user || null))
+      .catch(() => {})
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -70,12 +78,12 @@ export default function Header() {
               className="flex items-center gap-2.5 px-3 py-1.5 rounded-full hover:bg-gray-100/60 transition-all duration-200"
             >
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-100 to-gray-200/80 flex items-center justify-center">
-                <span className="text-[11px] font-semibold text-gray-700">张</span>
+                <span className="text-[11px] font-semibold text-gray-700">{profile?.name?.[0] || ''}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[13px] font-medium text-gray-900">张明</span>
+                <span className="text-[13px] font-medium text-gray-900">{profile?.name || ''}</span>
                 <span className="text-[13px] text-gray-400">·</span>
-                <span className="text-[13px] text-gray-500">手工</span>
+                <span className="text-[13px] text-gray-500">{profile?.department || ''}</span>
               </div>
             </button>
 

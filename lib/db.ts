@@ -4,7 +4,9 @@ const dbPath = join(process.cwd(), 'database.sqlite')
 
 export function initDB() {
   const commands = [
-    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT);",
+    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, name TEXT, department TEXT);",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS department TEXT;",
     "CREATE TABLE IF NOT EXISTS lines (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, idx INTEGER, content TEXT, last_modified INTEGER, UNIQUE(user_id, date, idx));",
   ]
   for (const cmd of commands) {
@@ -27,13 +29,19 @@ function run(sql: string) {
 
 export function getUser(username: string) {
   initDB()
-  const rows = query(`SELECT id, username, password FROM users WHERE username = '${escape(username)}' LIMIT 1;`)
-  return rows[0] as { id: number; username: string; password: string } | undefined
+  const rows = query(`SELECT id, username, password, name, department FROM users WHERE username = '${escape(username)}' LIMIT 1;`)
+  return rows[0] as { id: number; username: string; password: string; name: string; department: string } | undefined
 }
 
-export function createUser(username: string, password: string) {
+export function getUserById(id: number) {
   initDB()
-  run(`INSERT INTO users (username, password) VALUES ('${escape(username)}','${escape(password)}');`)
+  const rows = query(`SELECT id, username, name, department FROM users WHERE id = ${id} LIMIT 1;`)
+  return rows[0] as { id: number; username: string; name: string; department: string } | undefined
+}
+
+export function createUser(username: string, password: string, name: string, department: string) {
+  initDB()
+  run(`INSERT INTO users (username, password, name, department) VALUES ('${escape(username)}','${escape(password)}','${escape(name)}','${escape(department)}');`)
 }
 
 export function getNote(userId: number, date: string) {
