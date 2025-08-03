@@ -55,14 +55,35 @@ export async function POST(request: NextRequest) {
     const chat = ai.chats.create({
       model: 'gemini-2.5-flash',
       history: formattedHistory,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 0, // Disables thinking
+        },
+      }
     })
 
-    const res = await chat.sendMessage({
+    const resultStream = await chat.sendMessageStream({
       message,
     })
-    console.log(res.text) 
 
-    return NextResponse.json({ text: res.text })
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder()
+        for await (const chunk of resultStream) {
+          const text = chunk.text
+          if (text) {
+            controller.enqueue(encoder.encode(text))
+          }
+        }
+        controller.close()
+      },
+    })
+
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+      },
+    })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'LLM error' }, { status: 500 })

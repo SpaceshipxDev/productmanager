@@ -35,7 +35,7 @@ export default function ManagementApp() {
     const newEntry: Entry = {
       id: Date.now().toString(),
       query: query.trim(),
-      response: "Processing your query...",
+      response: "",
       timestamp: new Date(),
     };
 
@@ -56,17 +56,30 @@ export default function ManagementApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: newEntry.query, history }),
       });
-      const data = await res.json();
-      setEntries(prev =>
-        prev.map(entry =>
-          entry.id === newEntry.id
-            ? {
-                ...entry,
-                response: data.text || "No response from AI.",
-              }
-            : entry
-        )
-      );
+      
+      if (!res.body) {
+        throw new Error("No response body from API.");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      
+      let streamedResponse = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        streamedResponse += decoder.decode(value, { stream: true });
+        
+        setEntries(prev =>
+          prev.map(entry =>
+            entry.id === newEntry.id
+              ? { ...entry, response: streamedResponse }
+              : entry
+          )
+        );
+      }
+
     } catch (err) {
       setEntries(prev =>
         prev.map(entry =>
