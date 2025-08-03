@@ -169,30 +169,8 @@ export default function ManagementApp() {
           <div className="flex min-h-[70vh] flex-col items-center justify-center">
             <div className="space-y-4 text-center mb-20">
               <h1 className="text-[64px] font-extralight tracking-tight text-gray-900 leading-none">
-                Ask anything
+                越侬生产管理
               </h1>
-              <p className="text-[18px] text-gray-500 font-normal">
-                Precise answers to complex questions
-              </p>
-            </div>
-
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 w-full max-w-2xl">
-              {[
-                "Explain quantum computing",
-                "History of the internet",
-                "How does photosynthesis work"
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => {
-                    setQuery(suggestion);
-                    inputRef.current?.focus();
-                  }}
-                  className="rounded-xl border border-gray-200/60 bg-white/40 px-5 py-3.5 text-[14px] text-gray-600 transition-all hover:border-gray-300 hover:bg-white hover:shadow-sm"
-                >
-                  {suggestion}
-                </button>
-              ))}
             </div>
           </div>
         ) : (

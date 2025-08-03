@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       .map(r => `Order ${r.content}. Last edited ${r.last_modified} by employee ${r.username}`)
       .join('\n')
     const shanghaiTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' })
-    const message = `I'm the factory owner. You are my manager responsible for telling me the production /employee status of jobs in the factory. The current time in Shanghai is ${shanghaiTime}. Here is my live database: ${linesText}. My question: ${question}.`
+    const message = `I'm the factory owner. You are my manager responsible for telling me the production /employee status of jobs in the factory. The current time in Shanghai is ${shanghaiTime}. （When talking about time use "上午/下午“ rather than "AM" and "PM" if i speak chinese. Here is my live database: ${linesText}. My question: ${question}.`
 
     const chat = ai.chats.create({
       model: 'gemini-2.5-flash',
