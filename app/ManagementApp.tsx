@@ -53,10 +53,9 @@ function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () =
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "critical": return "text-red-600";
-      case "high": return "text-orange-600";
-      case "medium": return "text-yellow-600";
-      case "low": return "text-gray-600";
+      case "高": return "text-red-600";
+      case "中": return "text-yellow-600";
+      case "低": return "text-gray-600";
       default: return "text-gray-600";
     }
   };
@@ -180,10 +179,9 @@ export default function ManagementApp() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "critical": return "bg-red-50/50 text-red-600 border-red-100";
-      case "high": return "bg-orange-50/50 text-orange-600 border-orange-100";
-      case "medium": return "bg-yellow-50/50 text-yellow-600 border-yellow-100";
-      case "low": return "bg-gray-50/50 text-gray-600 border-gray-100";
+      case "高": return "bg-red-50/50 text-red-600 border-red-100";
+      case "中": return "bg-yellow-50/50 text-yellow-600 border-yellow-100";
+      case "低": return "bg-gray-50/50 text-gray-600 border-gray-100";
       default: return "bg-gray-50/50 text-gray-600 border-gray-100";
     }
   };

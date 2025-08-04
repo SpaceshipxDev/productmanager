@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   重要要求：
   - 所有展示给用户的内容必须以简体中文输出，包括 "lastEdited"（如："2小时前"，"3天前"）、"description"（如："到达 手工（张三）"）、"timestamp"（如："2小时前"）以及 "customerName"、"representative" 的内容。
-  - JSON字段名以及字段值 "stage" 和 "priority" 的枚举值（如 "quotation"、"order"、"low"、"medium" 等）请保持英文不变。
+  - JSON字段名保持英文。字段值 "stage" 使用英文枚举值（如 "quotation"、"order" 等）。字段值 "priority" 已改为中文枚举值："低"、"中"、"高"，优先级等级从原来的四个（low、medium、high、critical）调整为三个。
 
   Input: Unstructured text containing job updates from multiple factory workers at different times.
 
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
   id: Unique numeric id - 1, 2, 3, etc.
   title: The job identifier (format: ynmx-XX-X-XX-XXX)
   stage: Current stage of the job. Must be one of: ${COLUMN_IDS.join(', ')}
-  priority: One of: "low", "medium", "high", "critical"
-  - low = normal flow
-  - medium/high/critical = increasing urgency levels
+  priority: One of: "低", "中", "高"
+  - 低 = 正常流程
+  - 中/高 = 紧急程度逐渐增加
   dueDate: Due date if mentioned (null if not specified). Always format as YYYY-MM-DD.
   lastEdited: Time since last edit (例如："2小时前"，"3天前") rounded for user readability.
   customerName: Customer name (如无请填写："无")
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       "id": 1,
       "title": "YNMX-25-07-31-204",
       "stage": "quotation",
-      "priority": "medium",
+      "priority": "中",
       "dueDate": "今天",
       "lastEdited": "2小时前",
       "customerName": "ABC公司",
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       "id": 2,
       "title": "YNMX-25-07-31-205",
       "stage": "order",
-      "priority": "high",
+      "priority": "高",
       "dueDate": "今天",
       "lastEdited": "1小时前",
       "customerName": "XYZ公司",
