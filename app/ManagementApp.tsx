@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Building2, User, X } from "lucide-react";
@@ -22,72 +21,18 @@ const KANBAN_COLUMNS = [
   { id: "shipping", title: "出货" },
 ];
 
-// Map of column id to their mock tasks
-const kanbanTasks = {
-  quotation: [
-    {
-      id: "1",
-      title: "报价单填报",
-      priority: "low",
-      dueDate: "2025-08-20",
-      lastEdited: "2 hours ago",
-      customerName: "TechCorp Industries",
-      representative: "John Martinez",
-      activity: [
-        { description: "报价单已更新", timestamp: "2 hours ago" },
-        { description: "优先级设为低", timestamp: "1 day ago" },
-        { description: "分配给 John Martinez", timestamp: "3 days ago" },
-        { description: "任务创建", timestamp: "5 days ago" }
-      ]
-    }
-  ],
-  order: [
-    {
-      id: "2",
-      title: "生产订单创建",
-      priority: "medium",
-      dueDate: "2025-08-22",
-      lastEdited: "1 hour ago",
-      customerName: "NextGen Solutions",
-      representative: "Alice Chen",
-      activity: [
-        { description: "订单信息已完善", timestamp: "1 hour ago" },
-        { description: "优先级设为中", timestamp: "1 day ago" },
-        { description: "分配给 Alice Chen", timestamp: "2 days ago" },
-        { description: "任务创建", timestamp: "4 days ago" }
-      ]
-    }
-  ],
-  approval: [
-    {
-      id: "3",
-      title: "审批文件准备",
-      priority: "high",
-      dueDate: "2025-08-25",
-      lastEdited: "3 hours ago",
-      customerName: "Global Industries",
-      representative: "Michael Liu",
-      activity: [
-        { description: "提交审批文件", timestamp: "3 hours ago" },
-        { description: "优先级设为高", timestamp: "1 day ago" },
-        { description: "分配给 Michael Liu", timestamp: "3 days ago" },
-        { description: "任务创建", timestamp: "5 days ago" }
-      ]
-    }
-  ],
-  outsourcing: [],
-  daohe: [],
-  programming: [],
-  machine: [],
-  manual: [],
-  surface: [],
-  inspection: [],
-  shipping: [],
-};
+interface Task {
+  id: string;
+  title: string;
+  priority: string;
+  dueDate: string;
+  lastEdited: string;
+  customerName: string;
+  representative: string;
+  activity?: { description: string; timestamp: string }[];
+}
 
-type Task = typeof kanbanTasks["quotation"][0];
 type SelectedTask = Task & { status: string; columnId: string };
-type LineEntry = { content: string; name: string; department: string; lastModified: number };
 
 function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () => void }) {
   useEffect(() => {
@@ -202,18 +147,17 @@ function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () =
 
 export default function ManagementApp() {
   const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
+  const [kanbanTasks, setKanbanTasks] = useState<Record<string, Task[]>>({});
 
-  useEffect(() => {
-    fetch('/api/lines')
-      .then(res => res.json())
-      .then(data => {
-        (data.lines as LineEntry[]).forEach(line => {
-          const timeAgo = formatDistanceToNow(line.lastModified * 1000, { addSuffix: true });
-          console.log(`${line.content} (edited by ${line.name} in ${line.department}, ${timeAgo})`);
-        });
-      })
-      .catch(err => console.error('Failed to fetch lines', err));
-  }, []);
+  const generateKanban = async () => {
+    try {
+      const res = await fetch('/api/kanban', { method: 'POST' });
+      const data = await res.json();
+      setKanbanTasks(data.tasks ?? {});
+    } catch (err) {
+      console.error('Failed to generate kanban', err);
+    }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -244,7 +188,15 @@ export default function ManagementApp() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="pt-24 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8">项目流程看板</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900">项目流程看板</h1>
+          <button
+            onClick={generateKanban}
+            className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 hover:bg-gray-100 transition"
+          >
+            AI 生成
+          </button>
+        </div>
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4" style={{ minWidth: "max-content" }}>
             {KANBAN_COLUMNS.map((column) => (
