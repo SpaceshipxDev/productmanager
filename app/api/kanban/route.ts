@@ -31,7 +31,11 @@ export async function POST(request: NextRequest) {
     )
     .join('\n');
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
+  const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: 'Missing Google API key' }, { status: 500 });
+  }
+  const ai = new GoogleGenAI({ apiKey });
   const prompt =
     `From the numerous note entries, extract into individual project tasks (ones starting with ynmx-.) and organize them into a kanban board. ` +
     `Return a JSON object with keys ${COLUMN_IDS.join(', ')} where each key maps to an array of tasks. ` +
