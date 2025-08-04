@@ -115,7 +115,7 @@ export default function ManagementApp() {
           <div className="flex min-h-[70vh] flex-col items-center justify-center">
             <div className="space-y-4 text-center mb-20">
               <h1 className="text-[64px] font-extralight tracking-tight text-gray-900 leading-none">
-                生产管理
+                　生产管理
               </h1>
             </div>
           </div>

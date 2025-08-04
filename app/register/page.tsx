@@ -7,26 +7,28 @@ import { cn } from '@/lib/utils'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
-export default function LoginInterface() {
+export default function RegisterInterface() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState("")
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [department, setDepartment] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, name, department })
       })
       if (res.ok) {
         location.href = '/'
       } else {
         const data = await res.json()
-        setError(data.error || '凭证无效')
+        setError(data.error || '无法注册')
       }
     } finally {
       setIsLoading(false)
@@ -35,11 +37,11 @@ export default function LoginInterface() {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleLogin()
+      handleRegister()
     }
   }
 
-  const canLogin = username.length > 0 && password.length > 0
+  const canRegister = username.length > 0 && password.length > 0 && name.length > 0 && department.length > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-6">
@@ -59,10 +61,10 @@ export default function LoginInterface() {
             <span className="text-white text-2xl font-medium">ESTARA</span>
           </motion.div>
           <h1 className="text-2xl font-medium text-gray-900">
-            Estara
+            Create Account
           </h1>
           <p className="text-gray-500 mt-2">
-            继续进入你的工作区
+            Enter your details to create an account
           </p>
         </div>
 
@@ -99,6 +101,30 @@ export default function LoginInterface() {
               </button>
             </div>
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">姓名</label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="请输入姓名"
+                className="h-12 px-4 text-base border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 rounded-xl transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">部门</label>
+              <Input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="请输入部门"
+                className="h-12 px-4 text-base border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 rounded-xl transition-all"
+              />
+            </div>
+          </div>
 
           <motion.div
             initial={{ opacity: 0 }}
@@ -106,8 +132,8 @@ export default function LoginInterface() {
             transition={{ delay: 0.3 }}
           >
             <Button
-              onClick={handleLogin}
-              disabled={!canLogin || isLoading}
+              onClick={handleRegister}
+              disabled={!canRegister || isLoading}
               className={cn(
                 "w-full h-12 rounded-xl font-medium text-base",
                 "bg-gray-900 hover:bg-gray-800 text-white",
@@ -124,7 +150,7 @@ export default function LoginInterface() {
                 />
               ) : (
                 <span className="flex items-center justify-center">
-                  Login
+                  Register
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </span>
               )}
@@ -140,9 +166,9 @@ export default function LoginInterface() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-gray-500">
-            第一次使用 Estara?{' '}
-            <Link href="/register" className="text-gray-900 font-medium hover:underline">
-              创建账号
+            Already have an account?{' '}
+            <Link href="/login" className="text-gray-900 font-medium hover:underline">
+              Login
             </Link>
           </p>
         </motion.div>

@@ -4,13 +4,17 @@ const dbPath = join(process.cwd(), 'database.sqlite')
 
 export function initDB() {
   const commands = [
-    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, name TEXT, department TEXT);",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS department TEXT;",
+    'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT);',
+    'ALTER TABLE users ADD COLUMN name TEXT;',
+    'ALTER TABLE users ADD COLUMN department TEXT;',
     "CREATE TABLE IF NOT EXISTS lines (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, idx INTEGER, content TEXT, last_modified INTEGER, UNIQUE(user_id, date, idx));",
   ]
   for (const cmd of commands) {
-    execFileSync('sqlite3', [dbPath, cmd])
+    try {
+      execFileSync('sqlite3', [dbPath, cmd])
+    } catch (e) {
+      // ignore, this is for ALTER TABLE when column exists
+    }
   }
 }
 
