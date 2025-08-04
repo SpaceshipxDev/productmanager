@@ -1,287 +1,309 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Search, ArrowUp } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import Header from '@/components/header';
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Building2, User, X } from "lucide-react";
+import Header from "@/components/header";
 
-interface Entry {
-  id: string;
-  query: string;
-  response: string;
-  timestamp: Date;
-}
+// Default Kanban column definitions
+const KANBAN_COLUMNS = [
+  { id: "quotation", title: "报价" },
+  { id: "order", title: "制单" },
+  { id: "approval", title: "审批" },
+  { id: "outsourcing", title: "外协" },
+  { id: "daohe", title: "道禾" },
+  { id: "programming", title: "编程" },
+  { id: "machine", title: "操机" },
+  { id: "manual", title: "手工" },
+  { id: "surface", title: "表面处理" },
+  { id: "inspection", title: "检验" },
+  { id: "shipping", title: "出货" },
+];
 
-export default function ManagementApp() {
-  const [query, setQuery] = useState("");
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+// Map of column id to their mock tasks
+const kanbanTasks = {
+  quotation: [
+    {
+      id: "1",
+      title: "报价单填报",
+      priority: "low",
+      dueDate: "2025-08-20",
+      lastEdited: "2 hours ago",
+      customerName: "TechCorp Industries",
+      representative: "John Martinez",
+      activity: [
+        { description: "报价单已更新", timestamp: "2 hours ago" },
+        { description: "优先级设为低", timestamp: "1 day ago" },
+        { description: "分配给 John Martinez", timestamp: "3 days ago" },
+        { description: "任务创建", timestamp: "5 days ago" }
+      ]
+    }
+  ],
+  order: [
+    {
+      id: "2",
+      title: "生产订单创建",
+      priority: "medium",
+      dueDate: "2025-08-22",
+      lastEdited: "1 hour ago",
+      customerName: "NextGen Solutions",
+      representative: "Alice Chen",
+      activity: [
+        { description: "订单信息已完善", timestamp: "1 hour ago" },
+        { description: "优先级设为中", timestamp: "1 day ago" },
+        { description: "分配给 Alice Chen", timestamp: "2 days ago" },
+        { description: "任务创建", timestamp: "4 days ago" }
+      ]
+    }
+  ],
+  approval: [
+    {
+      id: "3",
+      title: "审批文件准备",
+      priority: "high",
+      dueDate: "2025-08-25",
+      lastEdited: "3 hours ago",
+      customerName: "Global Industries",
+      representative: "Michael Liu",
+      activity: [
+        { description: "提交审批文件", timestamp: "3 hours ago" },
+        { description: "优先级设为高", timestamp: "1 day ago" },
+        { description: "分配给 Michael Liu", timestamp: "3 days ago" },
+        { description: "任务创建", timestamp: "5 days ago" }
+      ]
+    }
+  ],
+  outsourcing: [],
+  daohe: [],
+  programming: [],
+  machine: [],
+  manual: [],
+  surface: [],
+  inspection: [],
+  shipping: [],
+};
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim() || isProcessing) return;
+type Task = typeof kanbanTasks["quotation"][0];
+type SelectedTask = Task & { status: string; columnId: string };
 
-    setIsProcessing(true);
-
-    const newEntry: Entry = {
-      id: Date.now().toString(),
-      query: query.trim(),
-      response: "",
-      timestamp: new Date(),
+function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () => void }) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
+    if (task) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
+    };
+  }, [task, onClose]);
 
-    const history = entries
-      .slice()
-      .reverse()
-      .flatMap(entry => [
-        { role: "user" as const, text: entry.query },
-        { role: "model" as const, text: entry.response },
-      ]);
+  if (!task) return null;
 
-    setEntries(prev => [...prev, newEntry]);
-    setQuery("");
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: newEntry.query, history }),
-      });
-      
-      if (!res.body) {
-        throw new Error("No response body from API.");
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      
-      let streamedResponse = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        streamedResponse += decoder.decode(value, { stream: true });
-        
-        setEntries(prev =>
-          prev.map(entry =>
-            entry.id === newEntry.id
-              ? { ...entry, response: streamedResponse }
-              : entry
-          )
-        );
-      }
-
-    } catch (err) {
-      setEntries(prev =>
-        prev.map(entry =>
-          entry.id === newEntry.id
-            ? { ...entry, response: "Error fetching response." }
-            : entry
-        )
-      );
-    } finally {
-      setIsProcessing(false);
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "critical": return "text-red-600";
+      case "high": return "text-orange-600";
+      case "medium": return "text-yellow-600";
+      case "low": return "text-gray-600";
+      default: return "text-gray-600";
     }
   };
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      const viewport = scrollRef.current.querySelector<HTMLDivElement>(
-        '[data-slot="scroll-area-viewport"]'
-      );
-      if (viewport) {
-        setTimeout(() => {
-          viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
-        }, 100);
-      }
-    }
-  }, [entries.length]);
-
-
-
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <Header />
-
-      <main className="mx-auto max-w-[42rem] px-6 sm:px-8 pt-24 pb-32">
-        {entries.length === 0 ? (
-          <div className="flex min-h-[70vh] flex-col items-center justify-center">
-            <div className="space-y-4 text-center mb-20">
-              <h1 className="text-[64px] font-extralight tracking-tight text-gray-900 leading-none">
-                　生产管理
+    <>
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-in fade-in duration-300"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+        <div
+          className="relative w-full max-w-5xl bg-white rounded-2xl shadow-xl animate-in slide-in-from-bottom-8 fade-in duration-500 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          style={{ maxHeight: "90vh" }}
+        >
+          <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 px-12 py-8 z-10">
+            <button
+              onClick={onClose}
+              className="absolute top-8 right-8 w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors duration-200"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+            <div className="max-w-4xl">
+              <div className="flex items-center gap-6 mb-4">
+                <span className={`text-sm font-medium ${getPriorityColor(task.priority)}`}>
+                  {task.priority}
+                </span>
+                <span className="text-sm text-gray-400">•</span>
+                <span className="text-sm text-gray-600">
+                  {task.status}
+                </span>
+              </div>
+              <h1 className="text-4xl font-semibold text-gray-900 tracking-tight">
+                {task.title}
               </h1>
             </div>
           </div>
-        ) : (
-          <ScrollArea className="h-[calc(100vh-13rem)]" ref={scrollRef}>
-            <div className="space-y-0 pb-12">
-              {entries.map((entry, index) => (
-                <article
-                  key={entry.id}
-                  className="border-b border-gray-200/40 last:border-0"
-                >
-                  <div className="py-16 first:pt-8">
-                    <div className="mb-8">
-                      <h2 className="text-[22px] font-semibold text-gray-900 leading-relaxed mb-2">
-                        {entry.query}
-                      </h2>
-                      <time className="text-[13px] text-gray-400 font-normal">
-                        {entry.timestamp.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </time>
-                    </div>
-                    
-                    <div className="prose prose-gray prose-lg max-w-none">
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          h1: ({children}) => <h1 className="text-[28px] font-semibold text-gray-900 mt-10 mb-5 leading-snug">{children}</h1>,
-                          h2: ({children}) => <h2 className="text-[22px] font-semibold text-gray-900 mt-8 mb-4 leading-relaxed">{children}</h2>,
-                          h3: ({children}) => <h3 className="text-[18px] font-semibold text-gray-900 mt-6 mb-3 leading-relaxed">{children}</h3>,
-                          p: ({children}) => <p className="text-[17px] leading-[1.75] text-gray-700 mb-5 font-normal tracking-wide">{children}</p>,
-                          ul: ({children}) => <ul className="my-6 space-y-3">{children}</ul>,
-                          ol: ({children}) => <ol className="my-6 space-y-3">{children}</ol>,
-                          li: ({children}) => <li className="text-[17px] leading-[1.75] text-gray-700 ml-7 font-normal tracking-wide">{children}</li>,
-                          strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                          em: ({children}) => <em className="italic text-gray-700">{children}</em>,
-                          code: ({className, children, ...props}) => {
-                            const match = /language-(\w+)/.exec(className || '');
-                            return match ? (
-                              <pre className="bg-gray-50/80 border border-gray-200/40 rounded-xl p-5 my-6 overflow-x-auto">
-                                <code className="text-[15px] font-mono text-gray-800 leading-relaxed">{children}</code>
-                              </pre>
-                            ) : (
-                              <code className="bg-gray-100/80 text-gray-800 px-1.5 py-0.5 rounded-md text-[15px] font-mono">{children}</code>
-                            );
-                          },
-                          blockquote: ({children}) => (
-                            <blockquote className="border-l-3 border-gray-300 pl-5 my-6 text-gray-600 italic">
-                              {children}
-                            </blockquote>
-                          ),
-                          a: ({children, href}) => (
-                            <a href={href} className="text-blue-600 hover:text-blue-700 underline decoration-1 underline-offset-3 transition-colors" target="_blank" rel="noopener noreferrer">
-                              {children}
-                            </a>
-                          ),
-                          hr: () => <hr className="my-8 border-gray-200/60" />,
-                        }}
-                      >
-                        {entry.response}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </main>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-white/75 backdrop-blur-xl border-t border-gray-200/40">
-        <div className="mx-auto max-w-[42rem] px-6 sm:px-8 py-5">
-          <form onSubmit={handleSubmit} className="relative">
-            <Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask a question..."
-              className="h-[52px] w-full rounded-full border-gray-200/60 bg-gray-50/40 pl-12 pr-12 text-[16px] transition-all placeholder:text-gray-400 focus:bg-white focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-0"
-              disabled={isProcessing}
-            />
-            <div
-              className={cn(
-                "absolute right-2.5 top-1/2 -translate-y-1/2 transition-all duration-200",
-                query ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
-              )}
-            >
-              {isProcessing ? (
-                <div className="flex h-9 w-9 items-center justify-center">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+          <div className="overflow-y-auto" style={{ maxHeight: "calc(90vh - 140px)" }}>
+            <div className="px-12 py-10">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 max-w-4xl mb-16">
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">客户</p>
+                  <p className="text-base font-medium text-gray-900">{task.customerName}</p>
                 </div>
-              ) : (
-                <button
-                  type="submit"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-white transition-all hover:bg-gray-800 hover:scale-105"
-                  aria-label="Submit query"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-              )}
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">负责人</p>
+                  <p className="text-base font-medium text-gray-900">{task.representative}</p>
+                </div>
+                {task.columnId !== "quotation" && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">交期</p>
+                    <p className="text-base font-medium text-gray-900">
+                      {new Date(task.dueDate).toLocaleDateString("zh-CN", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">最近更新时间</p>
+                  <p className="text-base font-medium text-gray-900">{task.lastEdited}</p>
+                </div>
+              </div>
+              <div className="mt-16 max-w-4xl">
+                <h2 className="text-sm font-medium text-gray-900 mb-8">进度记录</h2>
+                <div className="space-y-8">
+                  {(task.activity ?? []).map((event, i) => (
+                    <div className="flex gap-4" key={i}>
+                      <div className="w-2 h-2 rounded-full bg-gray-300 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <p className="text-sm text-gray-600">{event.description}</p>
+                        <p className="text-sm text-gray-400 mt-1">{event.timestamp}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
+    </>
+  );
+}
 
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-        
-        body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-        
-        .prose pre {
-          white-space: pre-wrap;
-          word-wrap: break-word;
-        }
-        
-        .prose ul li::before {
-          content: "•";
-          color: #9CA3AF;
-          font-weight: 400;
-          display: inline-block;
-          width: 1em;
-          margin-left: -1em;
-        }
-        
-        .prose ol {
-          counter-reset: list-counter;
-        }
-        
-        .prose ol li {
-          counter-increment: list-counter;
-        }
-        
-        .prose ol li::before {
-          content: counter(list-counter) ".";
-          color: #9CA3AF;
-          font-weight: 400;
-          display: inline-block;
-          width: 1.5em;
-          margin-left: -1.5em;
-        }
+export default function ManagementApp() {
+  const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 10px;
-        }
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "critical": return "bg-red-50 text-red-700 border-red-200";
+      case "high": return "bg-orange-50 text-orange-700 border-orange-200";
+      case "medium": return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "low": return "bg-green-50 text-green-700 border-green-200";
+      default: return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
 
-        ::-webkit-scrollbar-track {
-          background: transparent;
-        }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        ::-webkit-scrollbar-thumb {
-          background: #E5E7EB;
-          border-radius: 10px;
-        }
+    if (diffDays === 0) return "今天";
+    if (diffDays === 1) return "明天";
+    if (diffDays === -1) return "昨天";
+    if (diffDays > 0 && diffDays <= 7) return `还有${diffDays}天`;
+    if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)}天前`;
 
-        ::-webkit-scrollbar-thumb:hover {
-          background: #D1D5DB;
-        }
-      `}</style>
+    return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="pt-24 p-8">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-8">项目流程看板</h1>
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4" style={{ minWidth: "max-content" }}>
+            {KANBAN_COLUMNS.map((column) => (
+              <div key={column.id} className="w-80 flex-shrink-0">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-medium text-gray-900">{column.title}</h2>
+                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {(kanbanTasks[column.id] ?? []).length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    {(kanbanTasks[column.id] ?? []).map((task) => (
+                      <Card
+                        key={task.id}
+                        className="p-4 bg-gray-50 border-gray-200 hover:bg-white hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                        onClick={() => setSelectedTask({ ...task, status: column.title, columnId: column.id })}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <h3 className="font-medium text-gray-900 text-sm leading-5 flex-1">
+                              {task.title}
+                            </h3>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs px-2 py-0.5 ml-2 ${getPriorityColor(task.priority)}`}
+                            >
+                              {task.priority}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <Building2 className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="text-xs truncate">{task.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <User className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="text-xs">{task.representative}</span>
+                            </div>
+                          </div>
+                          {column.id !== "quotation" && (
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                              <span className="text-xs text-gray-500">
+                                交期 {formatDate(task.dueDate)}
+                              </span>
+                              <div className="flex items-center gap-1 text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-xs">{task.lastEdited}</span>
+                              </div>
+                            </div>
+                          )}
+                          {column.id === "quotation" && (
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                              <div className="flex items-center gap-1 text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-xs">{task.lastEdited}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <TaskModal task={selectedTask} onClose={() => setSelectedTask(null)} />
     </div>
   );
 }
+
