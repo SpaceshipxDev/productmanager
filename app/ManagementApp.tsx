@@ -110,11 +110,7 @@ function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () =
                   <div>
                     <p className="text-sm text-gray-500 mb-2">交期</p>
                     <p className="text-base font-medium text-gray-900">
-                      {new Date(task.dueDate).toLocaleDateString("zh-CN", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {formatDate(task.dueDate)}
                     </p>
                   </div>
                 )}
@@ -145,6 +141,29 @@ function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () =
   );
 }
 
+const formatDate = (dateString: string) => {
+  if (dateString === "今天") return "今天";
+  if (dateString === "明天") return "明天";
+  if (dateString === "后天") return "后天";
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return dateString;
+  }
+
+  const today = new Date();
+  const diffTime = date.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "今天";
+  if (diffDays === 1) return "明天";
+  if (diffDays === -1) return "昨天";
+  if (diffDays > 0 && diffDays <= 7) return `还有${diffDays}天`;
+  if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)}天前`;
+
+  return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+};
+
 export default function ManagementApp() {
   const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
   const [kanbanTasks, setKanbanTasks] = useState<Record<string, Task[]>>({});
@@ -167,21 +186,6 @@ export default function ManagementApp() {
       case "low": return "bg-gray-50/50 text-gray-600 border-gray-100";
       default: return "bg-gray-50/50 text-gray-600 border-gray-100";
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const diffTime = date.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "今天";
-    if (diffDays === 1) return "明天";
-    if (diffDays === -1) return "昨天";
-    if (diffDays > 0 && diffDays <= 7) return `还有${diffDays}天`;
-    if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)}天前`;
-
-    return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
   };
 
   return (
@@ -241,7 +245,7 @@ export default function ManagementApp() {
                           {column.id !== "quotation" && (
                             <div className="flex items-center justify-between pt-3 border-t border-gray-100/60">
                               <span className="text-xs text-gray-500">
-                                交期 {formatDate(task.dueDate)}
+                                交期： {formatDate(task.dueDate)}
                               </span>
                               <div className="flex items-center gap-1 text-gray-400">
                                 <Clock className="w-3 h-3" />

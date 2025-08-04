@@ -42,56 +42,72 @@ export async function POST(request: NextRequest) {
   const linesString = rawLines
     .map(
       line =>
-        `Content "${line.content}" confirmed ${formatElapsed(line.lastModified * 1000)} by user ${line.name} of ${line.department}.`
+        `Content "${line.content}" confirmed ${formatElapsed(line.lastModified * 1000)} by user ${line.name} of department ${line.department}.`
     )
     .join('\n');
 
   console.log("GOOGLE_API_KEY:", process.env.GOOGLE_API_KEY);
   const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
+  const shanghaiDate = new Date().toLocaleDateString("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric", 
+    month: "2-digit",
+    day: "2-digit"
+  }).replace(/\//g, '-');
+
   const prompt = `
-  You are a data extraction assistant for a factory job tracking system. Your task is to parse unstructured job update entries and organize them into a structured JSON format.
+  Today's date is ${shanghaiDate}.
+  You are a data extraction assistant for a factory job tracking system.
 
-  **Input**: Unstructured text containing job updates from multiple factory workers at different times.
+  Your task is to parse unstructured job update entries and organize them into a structured JSON format.
+  Employees may either input content of "ID: status, info" or just "ID" (in which case, they implicitly mean the job has arrived at their personal station).
 
-  **Task**: Extract and organize information about each job (identified by ynmx-... IDs).
+  重要要求：
+  - 所有展示给用户的内容必须以简体中文输出，包括 "lastEdited"（如："2小时前"，"3天前"）、"description"（如："到达 手工（张三）"）、"timestamp"（如："2小时前"）以及 "customerName"、"representative" 的内容。
+  - JSON字段名以及字段值 "stage" 和 "priority" 的枚举值（如 "quotation"、"order"、"low"、"medium" 等）请保持英文不变。
 
-  **For each job, extract**:
-  1. **id**: Unique numeric id - 1, 2, 3, etc. 
-  2. **title**: The job identifier (format: ynmx-XX-X-XX-XXX) 
-  3. **stage**: Current stage of the job. Must be one of: ${COLUMN_IDS.join(', ')}
-  4. **priority**: One of: "low", "medium", "high", "critical"
-    - low = normal flow
-    - medium/high/critical = increasing urgency levels
-  5. **dueDate**: Due date if mentioned (null if not specified)
-  6. **lastEdited**: Time since last edit (e.g., "2 hours ago", "3 days ago")
-  7. **customerName**: Customer name (use "无" if not available)
-  8. **representative**: Assigned representative (use "无" if not available)
-  9. **activity**: Array of activity history entries, each containing:
-    - description: What happened and who did it
-    - timestamp: When it happened (relative time)
+  Input: Unstructured text containing job updates from multiple factory workers at different times.
 
-  **Output format**: JSON array of task objects. Each task must include all fields listed above.
+  Task: Extract and organize information about each job (identified by ynmx-... IDs).
 
-  **Example output structure**:
+  For each job, extract:
+
+  id: Unique numeric id - 1, 2, 3, etc.
+  title: The job identifier (format: ynmx-XX-X-XX-XXX)
+  stage: Current stage of the job. Must be one of: ${COLUMN_IDS.join(', ')}
+  priority: One of: "low", "medium", "high", "critical"
+  - low = normal flow
+  - medium/high/critical = increasing urgency levels
+  dueDate: Due date if mentioned (null if not specified). Always format as YYYY-MM-DD.
+  lastEdited: Time since last edit (例如："2小时前"，"3天前") rounded for user readability.
+  customerName: Customer name (如无请填写："无")
+  representative: Assigned representative (如无请填写："无")
+  activity: Array of activity history entries, each containing:
+  - description: 具体操作描述及操作者姓名，以中文输出，如："到达 CNC（赵六）"
+  - timestamp: 相对时间，以中文输出，如："2天前"
+
+  Output format: JSON array of task objects. Each task must include all fields listed above.
+
+  Example output structure:
   [
     {
       "id": 1,
       "title": "YNMX-25-07-31-204",
       "stage": "quotation",
       "priority": "medium",
-      "dueDate": "2025-08-10",
-      "lastEdited": "2 hours ago",
-      "customerName": "ABC Corp",
+      "dueDate": "今天",
+      "lastEdited": "2小时前",
+      "customerName": "ABC公司",
       "representative": "张三",
       "activity": [
         {
-          "description": "Created by 李四",
-          "timestamp": "3 days ago"
+          "description": "到达 手工（张三）",
+          "timestamp": "2小时前"
         },
         {
-          "description": "Updated specifications by 张三",
-          "timestamp": "2 hours ago"
+          "description": "创建（李四）",
+          "timestamp": "3天前"
         }
       ]
     },
@@ -100,29 +116,32 @@ export async function POST(request: NextRequest) {
       "title": "YNMX-25-07-31-205",
       "stage": "order",
       "priority": "high",
-      "dueDate": "2025-08-08",
-      "lastEdited": "1 hour ago",
-      "customerName": "XYZ Ltd",
+      "dueDate": "今天",
+      "lastEdited": "1小时前",
+      "customerName": "XYZ公司",
       "representative": "王五",
       "activity": [
         {
-          "description": "Order placed by 赵六",
-          "timestamp": "2 days ago"
+          "description": "到达 CNC（赵六）",
+          "timestamp": "2天前"
         }
       ]
     }
   ]
 
-  **Important notes**:
-  - Output must be a flat JSON array
-  - Each task must have a "stage" field indicating its current stage
-  - Use null for missing values (except customerName and representative which should be "无")
-  - Maintain chronological order in activity arrays (oldest first)
-  - Parse relative timestamps consistently
-  - Ensure the stage value is exactly one of the allowed stages listed above
+  Important notes:
+
+  There will be multiple lines/entries of the same job. your task is to, like mentioned, merge the unstructured jobs into a defined json array of job entries conveying the db's unstructured information in the form of individual jobs with activity history.
+
+  - Output must be a flat JSON array.
+  - Use null for missing values (except customerName and representative which should be "无").
+  - Maintain chronological order in activity arrays (latest first).
+  - Parse relative timestamps consistently, 并以中文形式展示给用户（例如："2小时前"、"3天前"）。
+  - Ensure the stage value is exactly one of the allowed stages listed above.
 
   Here is the unstructured lines data: ${linesString}
-  `
+  `;
+
 
   console.log("\n Prompt: ", prompt)
 
@@ -130,7 +149,10 @@ export async function POST(request: NextRequest) {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      config: { 
+        responseMimeType: 'application/json',       
+        thinkingConfig: { thinkingBudget: 0 }, 
+      }
     });
     console.log("\n Res: ", response.text)
     
