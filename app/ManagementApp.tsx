@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Building2, User, X } from "lucide-react";
@@ -86,6 +87,7 @@ const kanbanTasks = {
 
 type Task = typeof kanbanTasks["quotation"][0];
 type SelectedTask = Task & { status: string; columnId: string };
+type LineEntry = { content: string; name: string; department: string; lastModified: number };
 
 function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () => void }) {
   useEffect(() => {
@@ -200,6 +202,18 @@ function TaskModal({ task, onClose }: { task: SelectedTask | null; onClose: () =
 
 export default function ManagementApp() {
   const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
+
+  useEffect(() => {
+    fetch('/api/lines')
+      .then(res => res.json())
+      .then(data => {
+        (data.lines as LineEntry[]).forEach(line => {
+          const timeAgo = formatDistanceToNow(line.lastModified * 1000, { addSuffix: true });
+          console.log(`${line.content} (edited by ${line.name} in ${line.department}, ${timeAgo})`);
+        });
+      })
+      .catch(err => console.error('Failed to fetch lines', err));
+  }, []);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
