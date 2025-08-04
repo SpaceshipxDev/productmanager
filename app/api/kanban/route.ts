@@ -27,13 +27,13 @@ export async function POST(request: NextRequest) {
   const linesString = rawLines
     .map(
       line =>
-        `Line: ${line.content} last edited ${formatDistanceToNow(line.lastModified * 1000, { addSuffix: true })} by ${line.name} of ${line.department}.`
+        `Entry: ${line.content} last edited ${formatDistanceToNow(line.lastModified * 1000, { addSuffix: true })} by user ${line.name} of ${line.department}.`
     )
     .join('\n');
 
   const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
   const prompt =
-    `From the following note entries, extract project tasks and organize them into a kanban board. ` +
+    `From the numerous note entries, extract into individual project tasks (ones starting with ynmx-.) and organize them into a kanban board. ` +
     `Return a JSON object with keys ${COLUMN_IDS.join(', ')} where each key maps to an array of tasks. ` +
     `Each task should include id, title, priority, dueDate, lastEdited, customerName, representative, and activity (array of {description, timestamp}).\n` +
     linesString;
