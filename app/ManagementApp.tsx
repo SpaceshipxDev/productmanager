@@ -161,11 +161,11 @@ export default function ManagementApp() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "critical": return "bg-red-50 text-red-700 border-red-200";
-      case "high": return "bg-orange-50 text-orange-700 border-orange-200";
-      case "medium": return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "low": return "bg-green-50 text-green-700 border-green-200";
-      default: return "bg-gray-50 text-gray-700 border-gray-200";
+      case "critical": return "bg-red-50/50 text-red-600 border-red-100";
+      case "high": return "bg-orange-50/50 text-orange-600 border-orange-100";
+      case "medium": return "bg-yellow-50/50 text-yellow-600 border-yellow-100";
+      case "low": return "bg-gray-50/50 text-gray-600 border-gray-100";
+      default: return "bg-gray-50/50 text-gray-600 border-gray-100";
     }
   };
 
@@ -185,62 +185,61 @@ export default function ManagementApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/30">
       <Header />
-      <div className="pt-24 p-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">项目流程看板</h1>
+      <div className="pt-20 px-6">
+        <div className="flex items-center justify-end mb-6">
           <button
             onClick={generateKanban}
-            className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 hover:bg-gray-100 transition"
+            className="px-4 py-2 rounded-xl bg-white border border-gray-200/60 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
           >
             AI 生成
           </button>
         </div>
-        <div className="overflow-x-auto pb-4">
+        <div className="overflow-x-auto pb-6 -mx-6 px-6">
           <div className="flex gap-4" style={{ minWidth: "max-content" }}>
             {KANBAN_COLUMNS.map((column) => (
               <div key={column.id} className="w-80 flex-shrink-0">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                  <div className="px-4 py-3 border-b border-gray-200">
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100/50">
                     <div className="flex items-center justify-between">
-                      <h2 className="font-medium text-gray-900">{column.title}</h2>
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <h2 className="font-medium text-gray-900 text-[15px]">{column.title}</h2>
+                      <span className="text-xs text-gray-500 bg-gray-100/60 px-2.5 py-1 rounded-full font-medium">
                         {(kanbanTasks[column.id] ?? []).length}
                       </span>
                     </div>
                   </div>
-                  <div className="p-3 space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  <div className="p-3 space-y-2.5" style={{ minHeight: "500px", maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
                     {(kanbanTasks[column.id] ?? []).map((task) => (
-                      <Card
+                      <div
                         key={task.id}
-                        className="p-4 bg-gray-50 border-gray-200 hover:bg-white hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                        className="p-4 bg-white rounded-xl border border-gray-200/60 hover:border-gray-300/60 hover:shadow-md transition-all duration-200 cursor-pointer group"
                         onClick={() => setSelectedTask({ ...task, status: column.title, columnId: column.id })}
                       >
                         <div className="space-y-3">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-3">
                             <h3 className="font-medium text-gray-900 text-sm leading-5 flex-1">
                               {task.title}
                             </h3>
                             <Badge
                               variant="outline"
-                              className={`text-xs px-2 py-0.5 ml-2 ${getPriorityColor(task.priority)}`}
+                              className={`text-xs px-2 py-0.5 border ${getPriorityColor(task.priority)}`}
                             >
                               {task.priority}
                             </Badge>
                           </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-gray-600">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-gray-600">
                               <Building2 className="w-3.5 h-3.5 text-gray-400" />
                               <span className="text-xs truncate">{task.customerName}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-gray-600">
+                            <div className="flex items-center gap-2 text-gray-600">
                               <User className="w-3.5 h-3.5 text-gray-400" />
                               <span className="text-xs">{task.representative}</span>
                             </div>
                           </div>
                           {column.id !== "quotation" && (
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between pt-3 border-t border-gray-100/60">
                               <span className="text-xs text-gray-500">
                                 交期 {formatDate(task.dueDate)}
                               </span>
@@ -251,7 +250,7 @@ export default function ManagementApp() {
                             </div>
                           )}
                           {column.id === "quotation" && (
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-end pt-3 border-t border-gray-100/60">
                               <div className="flex items-center gap-1 text-gray-400">
                                 <Clock className="w-3 h-3" />
                                 <span className="text-xs">{task.lastEdited}</span>
@@ -259,7 +258,7 @@ export default function ManagementApp() {
                             </div>
                           )}
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -272,4 +271,3 @@ export default function ManagementApp() {
     </div>
   );
 }
-
