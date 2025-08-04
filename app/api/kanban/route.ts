@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth';
 import { getLineEntries } from '@/lib/db';
-import { formatDistanceToNow } from 'date-fns';
 import { GoogleGenAI } from '@google/genai';
 
 const COLUMN_IDS = [
@@ -24,10 +23,26 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const rawLines = getLineEntries();
+
+  const formatElapsed = (timestampMs: number) => {
+    const diff = Date.now() - timestampMs;
+    const totalSeconds = Math.max(0, Math.floor(diff / 1000));
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    let result = '';
+    if (days > 0) result += `${days}d`;
+    if (days > 0 || hours > 0) result += `${hours}hr`;
+    if (days > 0 || hours > 0 || minutes > 0) result += `${minutes}min`;
+    result += `${seconds}sec ago`;
+    return result;
+  };
+
   const linesString = rawLines
     .map(
       line =>
-        `Content "${line.content}" confirmed by ${formatDistanceToNow(line.lastModified * 1000, { addSuffix: true })} by user ${line.name} of ${line.department}.`
+        `Content "${line.content}" confirmed ${formatElapsed(line.lastModified * 1000)} by user ${line.name} of ${line.department}.`
     )
     .join('\n');
 
