@@ -127,3 +127,16 @@ export function getAllNotes() {
     lastModified: new Date(Math.max(...v.lastModified) * 1000).toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }),
   }))
 }
+
+export function getLineEntries() {
+  initDB()
+  const rows = query(
+    `SELECT lines.content as content, lines.last_modified as last_modified, users.name as name, users.department as department FROM lines JOIN users ON lines.user_id = users.id ORDER BY lines.date DESC, lines.idx;`
+  ) as { content: string; last_modified: number; name: string; department: string }[]
+  return rows.map(r => ({
+    content: r.content,
+    lastModified: r.last_modified,
+    name: r.name,
+    department: r.department,
+  }))
+}
