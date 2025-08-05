@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
   }).replace(/\//g, '-');
 
   const prompt = `
-  Today's date is ${shanghaiDate}.
   You are a data extraction assistant for a factory job tracking system.
 
   Your task is to parse unstructured job update entries and organize them into a structured JSON format.
@@ -74,60 +73,27 @@ export async function POST(request: NextRequest) {
   For each job, extract:
 
   id: Unique numeric id - 1, 2, 3, etc.
-  title: The job identifier (format: ynmx-XX-X-XX-XXX)
+  title: The job identifier (format: YNMX-XX-X-XX-XXX)
   stage: Current stage of the job. Must be one of: ${COLUMN_IDS.join(', ')}
   priority: One of: "低", "中", "高"
-  - 低 = 正常流程
-  - 中/高 = 紧急程度逐渐增加
+  🛠 评估规则（必须严格遵守，任何偏差都算错误）  
+  • 已逾期 —— 交期 **早于今天** ⇒ "高"  
+  • 交期 **等于今天** ⇒ "中"  
+  • 交期 **等于明天** ⇒ "中"  
+  • 交期 **晚于明天** ⇒ "低"  
+  • 若未给出交期，则默认 "低"
+  Today's date is ${shanghaiDate}.
   dueDate: Due date if mentioned (null if not specified). Always format as YYYY-MM-DD.
   lastEdited: Time since last edit (例如："2小时前"，"3天前") rounded for user readability.
   customerName: Customer name (如无请填写："无")
   representative: Assigned representative (如无请填写："无")
   activity: Array of activity history entries, each containing:
-  - description: 具体操作描述及操作者姓名，以中文输出，如："到达 CNC（赵六）"
+  - description: 具体操作描述及操作者姓名，以中文输出，如："到达 CNC（赵六）". Given an actual grammatically correct succinct sentence. 
   - timestamp: 相对时间，以中文输出，如："2天前"
+  The entries in the activity should be in chronological order, latest first. 
 
   Output format: JSON array of task objects. Each task must include all fields listed above.
 
-  Example output structure:
-  [
-    {
-      "id": 1,
-      "title": "YNMX-25-07-31-204",
-      "stage": "quotation",
-      "priority": "中",
-      "dueDate": "今天",
-      "lastEdited": "2小时前",
-      "customerName": "ABC公司",
-      "representative": "张三",
-      "activity": [
-        {
-          "description": "到达 手工（张三）",
-          "timestamp": "2小时前"
-        },
-        {
-          "description": "创建（李四）",
-          "timestamp": "3天前"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "YNMX-25-07-31-205",
-      "stage": "order",
-      "priority": "高",
-      "dueDate": "今天",
-      "lastEdited": "1小时前",
-      "customerName": "XYZ公司",
-      "representative": "王五",
-      "activity": [
-        {
-          "description": "到达 CNC（赵六）",
-          "timestamp": "2天前"
-        }
-      ]
-    }
-  ]
 
   Important notes:
 
