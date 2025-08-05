@@ -160,6 +160,21 @@ export default function ManagementApp() {
   const [kanbanTasks, setKanbanTasks] = useState<Record<string, Task[]>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  useEffect(() => {
+    const fetchKanban = async () => {
+      try {
+        const res = await fetch('/api/kanban');
+        if (res.ok) {
+          const data = await res.json();
+          setKanbanTasks(data.tasks ?? {});
+        }
+      } catch (err) {
+        console.error('Failed to fetch kanban', err);
+      }
+    };
+    fetchKanban();
+  }, []);
+
   // Calculate statistics
   const stats = {
     active: 0,
