@@ -8,6 +8,7 @@ export function initDB() {
     'ALTER TABLE users ADD COLUMN name TEXT;',
     'ALTER TABLE users ADD COLUMN department TEXT;',
     "CREATE TABLE IF NOT EXISTS lines (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, idx INTEGER, content TEXT, last_modified INTEGER, UNIQUE(user_id, date, idx));",
+    "CREATE TABLE IF NOT EXISTS kanban (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT);",
   ]
   for (const cmd of commands) {
     try {
@@ -139,4 +140,23 @@ export function getLineEntries() {
     name: r.name,
     department: r.department,
   }))
+}
+
+export function getKanbanTasks() {
+  initDB()
+  const rows = query('SELECT data FROM kanban WHERE id = 1;') as { data?: string }[]
+  if (rows[0]?.data) {
+    try {
+      return JSON.parse(rows[0].data)
+    } catch {
+      return {}
+    }
+  }
+  return {}
+}
+
+export function setKanbanTasks(tasks: Record<string, any[]>) {
+  initDB()
+  const data = escape(JSON.stringify(tasks))
+  run(`INSERT OR REPLACE INTO kanban (id, data) VALUES (1, '${data}');`)
 }

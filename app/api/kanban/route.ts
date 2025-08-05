@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth';
-import { getLineEntries } from '@/lib/db';
+import { getLineEntries, getKanbanTasks, setKanbanTasks } from '@/lib/db';
 import { GoogleGenAI } from '@google/genai';
 
 const COLUMN_IDS = [
@@ -16,6 +16,15 @@ const COLUMN_IDS = [
   'inspection',
   'shipping',
 ];
+
+export async function GET(request: NextRequest) {
+  const sessionToken = request.cookies.get('session')?.value;
+  const session = verifySession(sessionToken);
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const tasks = getKanbanTasks();
+  return NextResponse.json({ tasks });
+}
 
 export async function POST(request: NextRequest) {
   const sessionToken = request.cookies.get('session')?.value;
@@ -145,6 +154,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    setKanbanTasks(tasks);
     return NextResponse.json({ tasks });
   } catch (e) {
     console.error("LLM request failed:", e);
